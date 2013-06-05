@@ -12,6 +12,7 @@ sub Either { Docopt::Either->new(\@_) }
 sub Required { Docopt::Required->new(\@_) }
 sub OneOrMore { Docopt::OneOrMore->new(\@_) }
 
+
 subtest 'parse_section' => sub {
     my @ret = Docopt::parse_section('usage', <<'...');
     usage: myapp
@@ -47,14 +48,21 @@ usage:
 };
 
 subtest 'Tokens.from_pattern' => sub {
-    my $doc = <<'...';
+    subtest 'complex' => sub {
+        is(Docopt::Tokens->from_pattern('(-h|-v[--file=<f>]N...)')->__repl__,
+            q!['(', '-h', '|', '-v', '[', '--file=<f>', ']', 'N', '...', ')']!
+        );
+    };
+    subtest 'simple' => sub {
+        my $doc = <<'...';
 usage:
     foo x y
     foo a b
 ...
-    is(Docopt::Tokens->from_pattern(Docopt::formal_usage($doc))->__repl__,
-        "['(', 'x', 'y', ')', '|', '(', 'a', 'b', ')']",
-    );
+        is(Docopt::Tokens->from_pattern(Docopt::formal_usage($doc))->__repl__,
+            "['(', 'x', 'y', ')', '|', '(', 'a', 'b', ')']",
+        );
+    };
 };
 
 subtest 'parse_pattern' => sub {
@@ -84,6 +92,24 @@ usage:
             Docopt::parse_pattern('[ -h | -v ]', $o)->__repl__,
             Required(Optional(Either(Option('-h'),
                                      Option('-v', '--verbose'))))->__repl__,
+        );
+        is(
+            Docopt::parse_pattern('[ --file <f> ]', $o)->__repl__,
+            Required(Optional(Option('-f', '--file', 1, undef)))->__repl__,
+        );
+        is(
+            Docopt::parse_pattern('( -h | -v [ --file <f> ] )', $o)->__repl__,
+                Required(Required(
+                    Either(Option('-h'),
+                    Required(Option('-v', '--verbose'),
+                    Optional(Option('-f', '--file', 1, undef))))))->__repl__,
+        );
+        is(
+            Docopt::parse_pattern('(-h|-v[--file=<f>]N...)', $o)->__repl__,
+            Required(Required(Either(Option('-h'),
+                Required(Option('-v', '--verbose'),
+                Optional(Option('-f', '--file', 1, undef)),
+                OneOrMore(Argument('N'))))))->__repl__,
         );
     };
 };

@@ -4,7 +4,7 @@ use warnings;
 use utf8;
 use parent qw(Exporter);
 
-our @EXPORT_OK = qw(repl class_name strip);
+our @EXPORT_OK = qw(repl class_name strip string_partition);
 
 use Data::Dumper; # serializer
 use Scalar::Util ();
@@ -45,6 +45,14 @@ sub strip($) {
     $_;
 }
 
+sub string_partition($$) {
+    my ($str, $sep) = @_;
+    if ($str =~ /\A(.*?)$sep(.*)\z/) {
+        return ($1, $sep, $2);
+    } else {
+        return ($str, '', '');
+    }
+}
 
 1;
 

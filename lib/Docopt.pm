@@ -4,7 +4,7 @@ use warnings FATAL => 'all';
 
 package Docopt;
 
-use Docopt::Util;
+use Docopt::Util qw(string_partition);
 
 our $DocoptExit = 1;
 
@@ -64,10 +64,8 @@ sub new {
     my ($class, $children) = @_;
     Carp::confess "Children must be arrayref: $class, $children" unless ref $children eq 'ARRAY';
 
-    if (@$children==1 && ref($children->[0]) eq 'ARRAY') {
-        # FIXME: Very ad-hoc.
-        $children=$children->[0];
-    }
+    # zjzj FIXME ad-hoc hack
+    $children = [ map { ref($_) eq 'ARRAY' ? @$_ : $_ } @$children];
 
     bless {
         children => [@$children],
@@ -148,7 +146,7 @@ sub new {
 sub from_pattern {
     my ($class, $source) = @_;
 
-    $source =~ s/([\[\]\(\)\|]|\.\.\.)/ $1/;
+    $source =~ s/([\[\]\(\)\|]|\.\.\.)/ $1 /g;
     my @source = grep { defined($_) && length $_ > 0 } split /\s+|(\S*<.*?>)/, $source;
     return Docopt::Tokens->new(\@source);
 }
@@ -233,7 +231,85 @@ sub __repl__ {
 
 package Docopt;
 
-sub parse_long { ...  }
+# long ::= '--' chars [ ( ' ' | '=' ) chars ] ;
+sub parse_long {
+    my ($tokens, $options) = @_;
+    ref($options) eq 'ARRAY' or die;
+
+    my ($long, $eq, $value) = string_partition($tokens->move, '=');
+    $long =~ /\A--/ or die;
+    $value = $eq eq '' && $value eq '' ? undef : $value;
+    my @similar = grep { $_->long && $_->long eq $long } @$options;
+    if ($Docopt::DocoptExit && @similar == 0) { # if no exact match
+        @similar = grep { $_->long && $_->long =~ /$long/ } @$options;
+    }
+    my $o;
+    if (@similar > 1) { # might be simply specified ambiguously 2+ times?
+        die sprintf '%s is not a unique prefix: %s?',
+            $long, join(', ', map { $_->long } @similar);
+    } elsif (@similar < 1) {
+        my $argcount = $eq eq '=' ? 1 : 0;
+        $o = Docopt::Option->new(undef, $long, $argcount);
+        push @$options, $o;
+        if ($Docopt::DocoptExit) {
+            $o = Docopt::Option->new(undef, $long, $argcount, $argcount ? $value : \1);
+        }
+    } else {
+        $o = Docopt::Option->new(
+            $similar[0]->short,
+            $similar[0]->long,
+            $similar[0]->argcount,
+            $similar[0]->value,
+        );
+        if ($o->argcount == 0) {
+            if (defined $value) {
+                die sprintf "%s must not have an argument", $o->long;
+            }
+        } else {
+            if (not defined $value) {
+                if (
+                    (not defined $tokens->current() ) || $tokens->current eq '==') {
+                    die sprintf "%s requires argument", $o->long
+                } 
+                $value = $tokens->move;
+            }
+        }
+        if ($Docopt::DocoptExit) {
+            $o->value(defined($value) ? $value : \1);
+        }
+    }
+    return [$o];
+
+#   long, eq, value = tokens.move().partition('=')
+#   assert long.startswith('--')
+#   value = None if eq == value == '' else value
+#   similar = [o for o in options if o.long == long]
+#   if tokens.error is DocoptExit and similar == []:  # if no exact match
+#       similar = [o for o in options if o.long and o.long.startswith(long)]
+#   if len(similar) > 1:  # might be simply specified ambiguously 2+ times?
+#       raise tokens.error('%s is not a unique prefix: %s?' %
+#                          (long, ', '.join(o.long for o in similar)))
+#   elif len(similar) < 1:
+#       argcount = 1 if eq == '=' else 0
+#       o = Option(None, long, argcount)
+#       options.append(o)
+#       if tokens.error is DocoptExit:
+#           o = Option(None, long, argcount, value if argcount else True)
+#   else:
+#       o = Option(similar[0].short, similar[0].long,
+#                  similar[0].argcount, similar[0].value)
+#       if o.argcount == 0:
+#           if value is not None:
+#               raise tokens.error('%s must not have an argument' % o.long)
+#       else:
+#           if value is None:
+#               if tokens.current() in [None, '--']:
+#                   raise tokens.error('%s requires argument' % o.long)
+#               value = tokens.move()
+#       if tokens.error is DocoptExit:
+#           o.value = value if value is not None else True
+#   return [o]
+}
 
 # shorts ::= '-' ( chars )* [ [ ' ' ] chars ] ;
 sub parse_shorts {
@@ -266,7 +342,7 @@ sub parse_shorts {
                     if (not defined($tokens->current) || $tokens->current eq '--') {
                         die "$short requires argument";
                     }
-                    $value = $tokens->remove;
+                    $value = $tokens->move;
                 } else {
                     $value = $left;
                     $left = '';
@@ -351,7 +427,7 @@ sub parse_expr {
         push @result, @$seq > 1 ? Docopt::Required->new($seq) : @$seq;
     }
     # zjzj This map() is so bad. But i can't remove this correctly...
-    return @result > 1 ? [Docopt::Either->new([map { @$_ } @result])] : \@result;
+    return @result > 1 ? [Docopt::Either->new([map { ref $_ eq 'ARRAY' ? @$_ : $_ } @result])] : \@result;
 
 #   seq = parse_seq(tokens, options)
 #   if tokens.current() != '|':
@@ -404,8 +480,9 @@ sub parse_atom {
             '(' => [')', Docopt::Required::],
             '[' => [']', Docopt::Optional::]
         }->{$token}};
-        my $result = $pattern->new(parse_expr($tokens, $options));
-        if ($tokens->move ne $matching) {
+        my $expr = parse_expr($tokens, $options);
+        my $result = $pattern->new($expr);
+        if (($tokens->move ||'') ne $matching) {
             die "unmatched '$token'";
         }
         return [$result];
