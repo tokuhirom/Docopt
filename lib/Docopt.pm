@@ -4,7 +4,7 @@ use warnings FATAL => 'all';
 
 package Docopt;
 
-use Docopt::Util qw(string_partition);
+use Docopt::Util qw(string_partition in);
 
 our $DocoptExit = 1;
 
@@ -51,7 +51,14 @@ sub __repl__ {
         repl($self->name),
         repl($self->value);
 }
-sub flat { ... }
+sub flat {
+    my ($self, $types) = @_;
+    if (!defined($types) || $self->isa($types)) {
+        return $self;
+    } else {
+        return ();
+    }
+}
 sub match { ... }
 
 package Docopt::BranchPattern;
@@ -60,8 +67,14 @@ use Carp;
 
 use Docopt::Util qw(repl class_name);
 
+use Class::Accessor::Lite 0.05 (
+    rw => [qw(children)],
+);
+use Scalar::Util qw(blessed);
+
 sub new {
     my ($class, $children) = @_;
+    Carp::croak("Too much arguments") unless @_==2;
     Carp::confess "Children must be arrayref: $class, $children" unless ref $children eq 'ARRAY';
 
     # zjzj FIXME ad-hoc hack
@@ -77,6 +90,19 @@ sub __repl__ {
     sprintf '%s(%s)',
         class_name($self),
         join(', ', map { repl($_) } @{$self->{children}});
+}
+
+sub flat {
+    my $self = shift;
+    my $types = shift;
+    if (defined($types) && $self->isa($types)) {
+        return [$self];
+    }
+    my @ret = map { ref($_) eq 'ARRAY' ? @$_ : $_ } map { $_->flat($types) } @{$self->children};
+    return \@ret;
+#       if type(self) in types:
+#           return [self]
+#       return sum([child.flat(*types) for child in self.children], [])
 }
 
 package Docopt::Argument;
@@ -177,7 +203,9 @@ our $VERSION = "0.01";
 
 package Docopt::Option;
 
-use Docopt::Util qw(repl strip);
+use parent -norequire, qw(Docopt::LeafPattern);
+
+use Docopt::Util qw(repl string_strip string_partition);
 
 use Class::Accessor::Lite 0.05 (
     rw => [qw(short long argcount value)],
@@ -199,7 +227,7 @@ sub parse {
     my ($class, $option_description) = @_;
     my ($short, $long, $argcount, $value) = (undef, undef, 0, undef);
 
-    my ($options, undef, $description) = split /  /, strip($option_description);
+    my ($options, undef, $description) = string_partition(string_strip($option_description), '  ');
 
     $options =~ s/,/ /g;
     $options =~ s/=/ /g;
@@ -213,7 +241,7 @@ sub parse {
         }
     }
     if ($argcount) {
-        if ($description =~ /\[default: (.*)\]/) {
+        if (defined($description) && $description =~ /\[default: (.*)\]/i) {
             $value = $1;
         }
     }
@@ -398,7 +426,7 @@ sub parse_pattern {
     if (defined $tokens->current()) {
         die "Unexpected ending: " . repl(join(' ', $tokens));
     }
-    return Docopt::Required->new(@$result);
+    return Docopt::Required->new($result);
 
 #   def parse_pattern(source, options):
 #       tokens = Tokens.from_pattern(source)
@@ -440,8 +468,6 @@ sub parse_expr {
 #   return [Either(*result)] if len(result) > 1 else result
 }
 
-*in = *Docopt::Util::in;
-
 # seq ::= ( atom [ '...' ] )* ;
 sub parse_seq {
     my ($tokens, $options) = @_;
@@ -454,7 +480,7 @@ sub parse_seq {
         }
         push @result, $atom;
     }
-    return \@result;
+    return [map { ref($_) eq 'ARRAY' ? @$_ : $_ } @result];
 #   def parse_seq(tokens, options):
 #       """seq ::= ( atom [ '...' ] )* ;"""
 #       result = []
@@ -488,7 +514,7 @@ sub parse_atom {
         return [$result];
     } elsif ($token eq 'options') {
         $tokens->move;
-        return [Docopt::OptionsShortcut->new];
+        return [Docopt::OptionsShortcut->new([])];
     } elsif ($token =~ /^--/ && $token ne '--') {
         return parse_long($tokens, $options);
     } elsif ($token =~ /^-/ && ($token ne '-' && $token ne '--')) {

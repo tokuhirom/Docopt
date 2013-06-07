@@ -4,7 +4,7 @@ use warnings;
 use utf8;
 use parent qw(Exporter);
 
-our @EXPORT_OK = qw(repl class_name strip string_partition);
+our @EXPORT_OK = qw(repl class_name string_strip string_partition in);
 
 use Data::Dumper; # serializer
 use Scalar::Util ();
@@ -38,7 +38,7 @@ sub class_name {
     $name;
 }
 
-sub strip($) {
+sub string_strip($) {
     local $_ = shift;
     s/^\s+//;
     s/\s+$//;
