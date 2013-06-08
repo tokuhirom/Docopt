@@ -6,7 +6,7 @@ use Data::Dumper;
 use Docopt;
 use Data::Dumper;
 use boolean;
-use Docopt::Util qw(repl);
+use Docopt::Util qw(repl serialize);
 
 sub Option { Docopt::Option->new(@_) }
 sub Argument { Docopt::Argument->new(@_) }
@@ -496,6 +496,16 @@ subtest 'test_pattern_fix_repeating_arguments' => sub {
                         OneOrMore(Argument('N')))->fix()],
         [Either(Argument('N', []), OneOrMore(Argument('N', [])))],
     );
+};
+
+
+use Scalar::Util qw(refaddr);
+subtest 'test_pattern_fix_identities_1' => sub {
+    my $pattern = Required(Argument('N'), Argument('N'));
+    is(serialize($pattern->children->[0]), serialize($pattern->children->[1]));
+    isnt(refaddr($pattern->children->[0]), refaddr($pattern->children->[1]));
+    $pattern->fix_identities();
+    is(refaddr($pattern->children->[0]), refaddr($pattern->children->[1]));
 };
 
 done_testing;

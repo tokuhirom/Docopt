@@ -5,13 +5,19 @@ use utf8;
 use parent qw(Exporter);
 use boolean;
 
-our @EXPORT_OK = qw(repl class_name string_strip string_partition in True False is_number defined_or);
+our @EXPORT_OK = qw(repl class_name string_strip string_partition in True False is_number defined_or serialize);
 
 sub True()  { true }
 sub False() { false }
 
 use Data::Dumper; # serializer
 use Scalar::Util ();
+use Storable ();
+
+sub serialize($) {
+    local $Storable::canonical=1;
+    return Storable::nfreeze($_[0]);
+}
 
 sub is_number {
     my $stuff = shift;

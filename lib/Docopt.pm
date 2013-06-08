@@ -23,8 +23,7 @@ sub fix {
     $self->fix_repeating_arguments();
     return $self;
 }
-use Docopt::Util qw(in);
-use Storable qw(nfreeze);
+use Docopt::Util qw(in serialize);
 
 # Make pattern-tree tips point to same object if they are equal.
 sub fix_identities {
@@ -38,8 +37,8 @@ sub fix_identities {
         my $child = $self->children->[$i];
         if (not $child->can('children')) {
             local $Storable::canonical=1;
-            in(nfreeze($child), [map { nfreeze($_) } @$uniq]) or die;
-            ($self->children->[$i], ) = grep { nfreeze($_) eq nfreeze($child) } @$uniq;
+            in(serialize($child), [map { serialize($_) } @$uniq]) or die;
+            ($self->children->[$i], ) = grep { serialize($_) eq serialize($child) } @$uniq;
         } else {
             $child->fix_identities($uniq);
         }
@@ -59,7 +58,7 @@ sub fix_identities {
 }
 
 use Scalar::Util qw(refaddr);
-use Docopt::Util qw(repl);
+use Docopt::Util qw(repl serialize);
 
 use v5.10.0;
 # Fix elements that should accumulate/increment values.
@@ -70,8 +69,7 @@ sub fix_repeating_arguments {
         my ($list, $stuff) = @_;
         my $n = 0;
         for (@$list) {
-            local $Storable::canonical=1;
-            $n++ if Storable::nfreeze($stuff) eq Storable::nfreeze($_);
+            $n++ if serialize($stuff) eq serialize($_);
         }
         return $n;
     };
@@ -387,6 +385,7 @@ package Docopt::OneOrMore;
 use parent -norequire, qw(Docopt::BranchPattern);
 use boolean;
 use Storable;
+use Docopt::Util qw(serialize);
 
 sub match {
     my ($self, $left, $collected) = @_;
@@ -403,8 +402,7 @@ sub match {
         # could it be that something didn't match but changed l or c?
         ($matched, $l, $c) = $self->children->[0]->match($l, $c);
         $times++ if $matched;
-        local $Storable::canonical=1;
-        if (Storable::nfreeze(\$l_) eq Storable::nfreeze(\$l)) {
+        if (serialize(\$l_) eq serialize(\$l)) {
             last;
         }
         $l_ = $l;
