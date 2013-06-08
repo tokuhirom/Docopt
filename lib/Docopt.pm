@@ -29,7 +29,8 @@ sub transform { ... }
 package Docopt::LeafPattern;
 use parent -norequire, qw(Docopt::Pattern);
 
-use Docopt::Util qw(repl class_name);
+use Scalar::Util qw(looks_like_number);
+use Docopt::Util qw(repl class_name True False);
 
 use Class::Accessor::Lite (
     rw => [qw(name value)],
@@ -59,7 +60,33 @@ sub flat {
         return ();
     }
 }
-sub match { ... }
+sub match {
+    my $self = shift;
+    my @left = @{+shift};
+    my @collected = @{ +shift || +[] };
+
+    my ($pos, $match) = $self->single_match(\@left);
+    unless ($match) {
+        return (False, \@left, \@collected);
+    }
+    my @left_ = (@left[0..$pos-1], @left[$pos+1..@left-1]);
+    my @same_name = grep { $_->name eq $self->name } @collected;
+    if (looks_like_number($self->value) || ref($self->value) eq 'ARRAY') {
+        my $increment;
+        if (looks_like_number($self->value)) {
+            $increment = 1;
+        } else {
+            $increment = ref($match->value) eq 'ARRAY' ? $match->value : $match->value;
+        }
+        unless (@same_name) {
+            $match->value($increment);
+            return (True, \@left_, [@collected, $match]);
+        }
+        $same_name[0]->{value} += $increment;
+        return (True, \@left_, @collected);
+    }
+    return (True, \@left_, [@collected, $match]);
+}
 
 package Docopt::BranchPattern;
 
@@ -108,7 +135,18 @@ sub flat {
 package Docopt::Argument;
 use parent -norequire, qw(Docopt::LeafPattern);
 
-sub single_match { ... }
+sub single_match {
+    my ($self, $left) = @_;
+    ref $left eq 'ARRAY' or die;
+
+    for (my $n=0; $n<@$left; $n++) {
+        my $pattern = $left->[$n];
+        if ($pattern->isa(Docopt::Argument::)) {
+            return ($n, Docopt::Argument->new($self->name, $pattern->value));
+        }
+    }
+    return (undef, undef);
+}
 
 sub parse { ... }
 
@@ -166,6 +204,9 @@ use Docopt::Util qw(repl);
 
 sub new {
     my ($class, $source) = @_;
+    unless (ref $source) {
+        $source = [split /\s+/, $source];
+    }
     bless [@$source], $class;
 }
 
@@ -221,6 +262,28 @@ sub new {
         argcount => $argcount,
         value => !defined($value) && $argcount ? undef : $value,
     }, $class;
+}
+
+sub single_match {
+    my ($self, $left) = @_;
+    ref $left eq 'ARRAY' or die;
+
+    for (my $n=0; $n<@$left; $n++) {
+        my $pattern = $left->[$n];
+        if ($self->name eq $pattern->name) {
+            return ($n, $pattern);
+        }
+    }
+    return (undef, undef);
+}
+
+sub name {
+    my $self = shift;
+    if (defined($self->long) && ref($self->long) ne 'SCALAR') {
+        $self->long;
+    } else {
+        $self->short;
+    }
 }
 
 sub parse {
@@ -547,7 +610,30 @@ sub parse_atom {
 #       return [Command(tokens.move())]
 }
 
-sub parse_argv { ... }
+#   Parse command-line argument vector.
+#
+#   If options_first:
+#       argv ::= [ long | shorts ]* [ argument ]* [ '--' [ argument ]* ] ;
+#   else:
+#       argv ::= [ long | shorts | argument ]* [ '--' [ argument ]* ] ;
+sub parse_argv {
+    my ($tokens, $options, $options_first) = @_;
+    my @parsed;
+    while (defined $tokens->current()) {
+        if ($tokens->current() eq '--') {
+            return [@parsed, map { Docopt::Argument->new(undef, $_) } @{$tokens}];
+        } elsif ($tokens->current() =~ /\A--/) {
+            push @parsed, @{parse_long($tokens, $options)};
+        } elsif ($tokens->current() =~ /\A-/ && $tokens->current ne '-') {
+            push @parsed, @{parse_shorts($tokens, $options)};
+        } elsif ($options_first) {
+            return [@parsed, map { Docopt::Argument->new(undef, $_) } @$tokens];
+        } else {
+            push @parsed, Docopt::Argument->new(undef, $tokens->move);
+        }
+    }
+    return \@parsed;
+}
 
 sub parse_defaults {
     my ($doc) = @_;
@@ -587,7 +673,7 @@ sub parse_section {
 
 sub formal_usage {
     my ($section) = @_;
-    $section =~ s/^usage://;
+    $section =~ s/^usage://i;
     my @pu = grep { /\S/ } split /\s+/, $section;
     my $cmd = shift @pu;
     return '( ' . join(' ', map { $_ eq $cmd ? ') | (' : $_ } @pu) . ' )';

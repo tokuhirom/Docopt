@@ -4,7 +4,10 @@ use warnings;
 use utf8;
 use parent qw(Exporter);
 
-our @EXPORT_OK = qw(repl class_name string_strip string_partition in);
+our @EXPORT_OK = qw(repl class_name string_strip string_partition in True False);
+
+sub True()  { \1 }
+sub False() { \0 }
 
 use Data::Dumper; # serializer
 use Scalar::Util ();

@@ -77,70 +77,7 @@ usage:
         my $result = Docopt::parse_pattern($formal, $options);
         is($result->__repl__, q!Required(Required(Command('bar', undef)))!);
     };
-    subtest 'test_doctest.py' => sub {
-        test_parse_pattern('[ -h ]',
-           Required(Optional(Option('-h')))
-        );
-        test_parse_pattern('[ ARG ... ]',
-           Required(Optional(OneOrMore(Argument('ARG')))),
-        );
-        test_parse_pattern('[ -h | -v ]',
-            Required(Optional(Either(Option('-h'),
-                                     Option('-v', '--verbose'))))
-        );
-        test_parse_pattern('[ --file <f> ]',
-            Required(Optional(Option('-f', '--file', 1, undef)))
-        );
-        test_parse_pattern(
-            '( -h | -v [ --file <f> ] )',
-                Required(Required(
-                    Either(Option('-h'),
-                    Required(Option('-v', '--verbose'),
-                    Optional(Option('-f', '--file', 1, undef))))))
-        );
-        test_parse_pattern('(-h|-v[--file=<f>]N...)',
-            Required(Required(Either(Option('-h'),
-                Required(Option('-v', '--verbose'),
-                Optional(Option('-f', '--file', 1, undef)),
-                OneOrMore(Argument('N')))))),
-        );
-        test_parse_pattern('(N [M | (K | L)] | O P)',
-            Required(Required(Either(
-                            Required(Argument('N'),
-                                        Optional(Either(Argument('M'),
-                                                        Required(Either(Argument('K'),
-                                                                        Argument('L')))))),
-                            Required(Argument('O'), Argument('P')))))
-        );
-        test_parse_pattern('[ -h ] [N]',
-            Required(Optional(Option('-h')),
-                     Optional(Argument('N'))));
-        test_parse_pattern(
-            '[options]',
-            Required(Optional(OptionsShortcut())),
-        );
-        test_parse_pattern('[options] A',
-            Required(Optional(OptionsShortcut()), Argument('A')));
-        test_parse_pattern('-v [options]',
-            Required(Option('-v', '--verbose'),
-                                     Optional(OptionsShortcut())));
-        test_parse_pattern('ADD',
-            Required(Argument('ADD')));
-        test_parse_pattern('<add>',
-            Required(Argument('<add>')));
-    };
 };
 
 done_testing;
 
-sub test_parse_pattern {
-    my ($input, $expected) = @_;
-    local $Test::Builder::Level = $Test::Builder::Level + 1;
-    local $Docopt::DocoptExit=0;
-    my $o = [Option('-h'), Option('-v', '--verbose'), Option('-f', '--file', 1)];
-    is(
-        Docopt::parse_pattern($input, $o)->__repl__,
-        $expected->__repl__,
-        $input
-    );
-}
