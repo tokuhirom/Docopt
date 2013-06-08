@@ -4,7 +4,7 @@ use warnings FATAL => 'all';
 
 package Docopt;
 
-use Docopt::Util qw(string_partition in serialize);
+use Docopt::Util qw(string_partition in serialize defined_or);
 
 our $DocoptExit = 1;
 
@@ -697,12 +697,12 @@ sub parse_shorts {
         my $short = '-' . $1;
         my @similar = grep { $_->short eq $short } @$options;
         if (@similar > 1) {
-            die sprintf "%s is specified ambiguously %d times",
-                $short, 0+@similar;
+            $tokens->error->throw(sprintf "%s is specified ambiguously %d times",
+                $short, 0+@similar);
         } elsif (@similar < 1) {
             $o = Docopt::Option->new($short, undef, 0);
             push @$options, $o;
-            if ($Docopt::DocoptExit) {
+            if ($tokens->error eq 'Docopt::Exceptions::DocoptExit') {
                 $o = Docopt::Option->new($short, undef, 0, undef)
             }
         } else {
@@ -721,7 +721,7 @@ sub parse_shorts {
                     $left = '';
                 }
             }
-            if ($Docopt::DocoptExit) {
+            if ($tokens->error eq 'Docopt::Exceptions::DocoptExit') {
                 $o->value(defined($value) ? $value : true);
             }
         }
@@ -769,7 +769,7 @@ sub parse_pattern {
     my $tokens = Docopt::Tokens->from_pattern($source);
     my $result = parse_expr($tokens, $options);
     if (defined $tokens->current()) {
-        die "Unexpected ending: " . repl(join(' ', $tokens));
+        $tokens->error->throw("unexpected ending: " . repl(join(' ', $tokens)));
     }
     return Docopt::Required->new($result);
 
@@ -931,7 +931,7 @@ sub parse_defaults {
         shift @split;
         my @split2;
         for (my $i=0; $i<@split; $i+=2) {
-            push @split2, $split[$i].$split[$i+1];
+            push @split2, $split[$i].defined_or($split[$i+1], '');
         }
 #       options = [Option.parse(s) for s in split if s.startswith('-')]
         my @options;

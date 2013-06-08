@@ -545,6 +545,38 @@ subtest 'test_long_options_error_handling' => sub {
     isa_ok(exception { docopt("Usage: prog --long\nOptions: --long", '--long=ARG') }, 'Docopt::Exceptions::DocoptExit');
 };
 
+subtest 'test_short_options_error_handling' => sub {
+    isa_ok(exception { docopt("Usage: prog -x\nOptions: -x  this\n -x  that") }, 'Docopt::Exceptions::DocoptLanguageError');
+
+#    with raises(DocoptLanguageError):
+#        docopt('Usage: prog -x')
+    isa_ok(exception { docopt('Usage: prog', '-x') }, 'Docopt::Exceptions::DocoptExit');
+    isa_ok(exception { docopt("Usage: prog -o\nOptions: -o ARG") }, 'Docopt::Exceptions::DocoptLanguageError');
+    isa_ok(exception { docopt('Usage: prog -o ARG\nOptions: -o ARG', '-o') }, 'Docopt::Exceptions::DocoptExit');
+};
+
+subtest 'test_matching_paren' => sub {
+    isa_ok(exception { docopt('Usage: prog [a [b]') }, 'Docopt::Exceptions::DocoptLanguageError');
+    isa_ok(
+        exception {
+            docopt('Usage: prog [a [b] ] c )');
+        },
+        'Docopt::Exceptions::DocoptLanguageError'
+    );
+};
+
+subtest 'test_allow_double_dash' => sub {
+    is_deeply(
+        docopt( "usage: prog [-o] [--] <arg>\nkptions: -o", '-- -o' ),
+        { '-o' => undef, '<arg>' => '-o', '--' => true }
+    );
+    is_deeply(docopt("usage: prog [-o] [--] <arg>\nkptions: -o",
+                  '-o 1'), {'-o'=> True, '<arg>'=>'1', '--' => undef});
+
+    # "--" is not allowed; FIXME?
+    isa_ok(exception { docopt("usage: prog [-o] <arg>\noptions:-o", '-- -o') }, 'Docopt::Exceptions::DocoptExit');
+};
+
 done_testing;
 
 sub test_pattern_flat {
