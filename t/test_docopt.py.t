@@ -508,6 +508,15 @@ subtest 'test_pattern_fix_identities_1' => sub {
     is(refaddr($pattern->children->[0]), refaddr($pattern->children->[1]));
 };
 
+subtest 'test_pattern_fix_identities_2' => sub {
+    my $pattern = Required(Optional(Argument('X'), Argument('N')), Argument('N'));
+    is_deeply($pattern->children->[0]->children->[1], $pattern->children->[1]);
+    isnt(refaddr($pattern->children->[0]->children->[1]), refaddr($pattern->children->[1]));
+    $pattern->fix_identities();
+    is($pattern->children->[0]->children->[1], $pattern->children->[1]);
+};
+
+
 done_testing;
 
 sub test_pattern_flat {
