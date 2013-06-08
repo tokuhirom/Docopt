@@ -16,6 +16,7 @@ sub Either { Docopt::Either->new(\@_) }
 sub Required { Docopt::Required->new(\@_) }
 sub OneOrMore { Docopt::OneOrMore->new(\@_) }
 sub OptionsShortcut() { Docopt::OptionsShortcut->new(\@_) }
+sub transform { goto &Docopt::transform }
 
 sub Tokens { Docopt::Tokens->new(\@_) }
 
@@ -440,6 +441,41 @@ subtest 'test_basic_pattern_matching' => sub {
     );
 };
 
+subtest 'test_pattern_either' => sub {
+    test_pattern_either(
+        [transform(Option('-a'))],
+        [Either(Required(Option('-a')))]
+    );
+    test_pattern_either(
+        [transform(Argument('A'))],
+        [Either(Required(Argument('A')))]
+    );
+    test_pattern_either(
+        [transform(Required(Either(Option('-a'), Option('-b')),
+                    Option('-c')))],
+        [Either(Required(Option('-a'), Option('-c')),
+                Required(Option('-b'), Option('-c')))]
+    );
+    test_pattern_either(
+        [transform(Optional(Option('-a'), Either(Option('-b'),
+                                                   Option('-c'))))],
+        [Either(Required(Option('-b'), Option('-a')),
+                Required(Option('-c'), Option('-a')))],
+    );
+    test_pattern_either(
+        [transform(Either(Option('-x'),
+                                Either(Option('-y'), Option('-z'))))],
+        [Either(Required(Option('-x')),
+                Required(Option('-y')),
+                Required(Option('-z')))]
+    );
+    test_pattern_either(
+        [transform(OneOrMore(Argument('N'), Argument('M')))],
+        [Either(Required(Argument('N'), Argument('M'),
+                            Argument('N'), Argument('M')))]
+    );
+};
+
 done_testing;
 
 sub test_pattern_flat {
@@ -520,4 +556,5 @@ sub test_either_match { goto &test_argument_match }
 sub test_one_or_more_match { goto &test_argument_match }
 sub test_list_argument_match { goto &test_argument_match }
 sub test_basic_pattern_matching { goto &test_argument_match }
+sub test_pattern_either { goto &test_argument_match }
 

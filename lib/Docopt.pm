@@ -74,7 +74,59 @@ sub fix_repeating_arguments {
 
 package Docopt;
 
-sub transform { ... }
+use List::MoreUtils qw(any);
+use Scalar::Util qw(blessed refaddr);
+use Docopt::Util qw(repl);
+
+# Expand pattern into an (almost) equivalent one, but with single Either.
+#   Example: ((-a | -b) (-c | -d)) => (-a -c | -a -d | -b -c | -b -d)
+#   Quirks: [-a] => (-a), (-a...) => (-a -a)
+sub transform {
+    my ($pattern) = @_;
+
+    my @results;
+    my @groups = [$pattern];
+    while (@groups) {
+        my $children = shift @groups;
+        my @parents = qw(Docopt::Required Docopt::Optional Docopt::OptionsShortcut Docopt::Either Docopt::OneOrMore);
+        if (any { in($_, [map { blessed $_ } @$children]) } @parents) {
+            my $child = [grep { in(blessed $_, \@parents) } @$children]->[0];
+            $children = [ grep { refaddr($child) ne refaddr($_) } @$children ];
+            if ($child->isa('Docopt::Either')) {
+                for (@{$child->children}) {
+                    push @groups, [$_, @{$children}];
+                }
+            } elsif ($child->isa('Docopt::OneOrMore')) {
+                push @groups, [@{$child->children}, @{$child->children}, @$children];
+            } else {
+                push @groups, [@{$child->children}, @$children];
+            }
+        } else {
+            push @results, $children;
+        }
+    }
+    return Docopt::Either->new([map { Docopt::Required->new($_) } @results]);
+
+#ef transform(pattern):
+#   result = []
+#   groups = [[pattern]]
+#   while groups:
+#       children = groups.pop(0)
+#       parents = [Required, Optional, OptionsShortcut, Either, OneOrMore]
+#       if any(t in map(type, children) for t in parents):
+#           child = [c for c in children if type(c) in parents][0]
+#           children.remove(child)
+#           if type(child) is Either:
+#               for c in child.children:
+#                   groups.append([c] + children)
+#           elif type(child) is OneOrMore:
+#               groups.append(child.children * 2 + children)
+#           else:
+#               groups.append(child.children + children)
+#       else:
+#           result.append(children)
+#   return Either(*[Required(*e) for e in result])
+}
 
 # Leaf/terminal node of a pattern tree
 package Docopt::LeafPattern;
