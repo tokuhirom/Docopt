@@ -3,6 +3,7 @@ use warnings;
 use utf8;
 use Test::More;
 use Data::Dumper;
+BEGIN { *CORE::GLOBAL::exit = sub (;$) { die bless {}, 'SystemExit' } };
 use Docopt;
 use Data::Dumper;
 use boolean;
@@ -577,6 +578,51 @@ subtest 'test_allow_double_dash' => sub {
     isa_ok(exception { docopt("usage: prog [-o] <arg>\noptions:-o", '-- -o') }, 'Docopt::Exceptions::DocoptExit');
 };
 
+subtest 'test_docopt' => sub {
+    my $doc = q{Usage: prog [-v] A
+
+             Options: -v  Be verbose.};
+    is_deeply(docopt($doc, 'arg'), {'-v' => undef, 'A' => 'arg'});
+    is_deeply(docopt($doc, '-v arg'), {'-v' => true, 'A' => 'arg'});
+    $doc = q{Usage: prog [-vqr] [FILE]
+              prog INPUT OUTPUT
+              prog --help
+
+    Options:
+      -v  print status messages
+      -q  report only file names
+      -r  show all occurrences of the same error
+      --help
+
+      };
+    is_deeply(
+        docopt($doc, '-v file.py'),
+        {'-v'=> True, '-q'=> undef, '-r'=> undef, '--help'=> undef,
+                 'FILE'=> 'file.py', 'INPUT'=> None, 'OUTPUT'=> None}
+    );
+
+    is_deeply(
+        docopt($doc, '-v'),
+        {'-v'=> True, '-q'=> undef, '-r'=> undef, '--help'=> undef,
+                 'FILE'=> None, 'INPUT'=> None, 'OUTPUT'=> None}
+    );
+
+    # does not match
+    isa_ok(exception { 
+        docopt($doc, '-v input.py output.py')
+    }, 'Docopt::Exceptions::DocoptExit');
+
+    isa_ok(exception { 
+        docopt($doc, '--fake')
+    }, 'Docopt::Exceptions::DocoptExit');
+
+    isa_ok(exception { 
+        docopt($doc, '--hel')
+    }, 'SystemExit');
+
+    #with raises(SystemExit):
+    #    docopt(doc, 'help')  XXX Maybe help command?
+};
 done_testing;
 
 sub test_pattern_flat {

@@ -613,7 +613,7 @@ sub parse_long {
     $long =~ /\A--/ or die;
     $value = $eq eq '' && $value eq '' ? undef : $value;
     my @similar = grep { $_->long && $_->long eq $long } @$options;
-    if ($Docopt::DocoptExit && @similar == 0) { # if no exact match
+    if ($tokens->error eq 'Docopt::Exceptions::DocoptExit' && @similar == 0) { # if no exact match
         @similar = grep { $_->long && $_->long =~ /$long/ } @$options;
     }
     my $o;
@@ -624,7 +624,7 @@ sub parse_long {
         my $argcount = $eq eq '=' ? 1 : 0;
         $o = Docopt::Option->new(undef, $long, $argcount);
         push @$options, $o;
-        if ($Docopt::DocoptExit) {
+        if ($tokens->error eq 'Docopt::Exceptions::DocoptExit') {
             $o = Docopt::Option->new(undef, $long, $argcount, $argcount ? $value : true);
         }
     } else {
@@ -647,7 +647,7 @@ sub parse_long {
                 $value = $tokens->move;
             }
         }
-        if ($Docopt::DocoptExit) {
+        if ($tokens->error eq 'Docopt::Exceptions::DocoptExit') {
             $o->value(defined($value) ? $value : true);
         }
     }
@@ -695,7 +695,7 @@ sub parse_shorts {
         my $o;
         $left =~ s/\A(.)//;
         my $short = '-' . $1;
-        my @similar = grep { $_->short eq $short } @$options;
+        my @similar = grep { defined_or($_->short, '') eq $short } @$options;
         if (@similar > 1) {
             $tokens->error->throw(sprintf "%s is specified ambiguously %d times",
                 $short, 0+@similar);
@@ -794,13 +794,13 @@ sub parse_expr {
 
 #   result = [Required(*seq)] if len(seq) > 1 else seq
     my @result = @$seq > 1 ? Docopt::Required->new($seq) : @$seq;
-    while ($tokens->current eq '|') {
+    while (defined($tokens->current) && $tokens->current eq '|') {
         $tokens->move();
         $seq = parse_seq($tokens, $options);
         push @result, @$seq > 1 ? Docopt::Required->new($seq) : @$seq;
     }
     # zjzj This map() is so bad. But i can't remove this correctly...
-    return @result > 1 ? [Docopt::Either->new([map { ref $_ eq 'ARRAY' ? @$_ : $_ } @result])] : \@result;
+    return @result > 1 ? [Docopt::Either->new([map { ref($_) eq 'ARRAY' ? @$_ : $_ } @result])] : \@result;
 
 #   seq = parse_seq(tokens, options)
 #   if tokens.current() != '|':
