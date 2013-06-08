@@ -297,6 +297,25 @@ subtest 'test_optional_match' => sub {
     );
 };
 
+subtest 'test_required_match' => sub {
+    test_required_match(
+        [Required(Option('-a'))->match([Option('-a')])],
+        [(True, [], [Option('-a')])],
+    );
+    test_required_match(
+        [Required(Option('-a'))->match([])],
+        [(False, [], [])],
+    );
+    test_required_match(
+        [Required(Option('-a'))->match([Option('-x')])],
+        [(False, [Option('-x')], [])],
+    );
+    test_required_match(
+        [Required(Option('-a'), Option('-b'))->match([Option('-a')])],
+        [(False, [Option('-a')], [])]
+    );
+};
+
 done_testing;
 
 sub test_pattern_flat {
@@ -372,4 +391,5 @@ sub test_argument_match {
 }
 sub test_command_match { goto &test_argument_match }
 sub test_optional_match { goto &test_argument_match }
+sub test_required_match { goto &test_argument_match }
 

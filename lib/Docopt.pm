@@ -185,8 +185,34 @@ sub single_match {
 package Docopt::Required;
 
 use parent -norequire, qw(Docopt::BranchPattern);
+use boolean;
 
-sub match { ... }
+sub match {
+    my ($self, $left, $collected) = @_;
+    $collected ||= [];
+
+    my $l = $left;
+    my $c = $collected;
+    for my $pattern (@{$self->children}) {
+        my $matched;
+        ($matched, $l, $c) = $pattern->match($l, $c);
+        unless ($matched) {
+            return (false, $left, $collected);
+        }
+    }
+    return (true, $l, $c);
+
+    
+#   def match(self, left, collected=None):
+#       collected = [] if collected is None else collected
+#       l = left
+#       c = collected
+#       for pattern in self.children:
+#           matched, l, c = pattern.match(l, c)
+#           if not matched:
+#               return False, left, collected
+#       return True, l, c
+}
 
 package Docopt::Optional;
 
