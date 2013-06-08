@@ -1070,6 +1070,8 @@ Docopt - It's new $module
 
 Docopt is ...
 
+This version is based on docopt-py e495aaaf0b9dcea6bc8bc97d9143a0d7a649fa06.
+
 =head1 LICENSE
 
 Copyright (C) tokuhirom.
