@@ -345,6 +345,52 @@ subtest 'test_either_match()' => sub {
     );
 };
 
+subtest 'test_one_or_more_match' => sub {
+    test_one_or_more_match(
+        [OneOrMore(Argument('N'))->match([Argument(None, 9)])],
+        [(True, [], [Argument('N', 9)])],
+    );
+    test_one_or_more_match(
+        [OneOrMore(Argument('N'))->match([])],
+        [(False, [], [])]
+    );
+    test_one_or_more_match(
+        [OneOrMore(Argument('N'))->match([Option('-x')])],
+        [(False, [Option('-x')], [])],
+    );
+    test_one_or_more_match(
+        [OneOrMore(Argument('N'))->match(
+            [Argument(None, 9), Argument(None, 8)])],
+        [True, [], [Argument('N', 9), Argument('N', 8)]],
+    );
+    test_one_or_more_match(
+        [OneOrMore(Argument('N'))->match(
+            [Argument(None, 9), Option('-x'), Argument(None, 8)])],
+        [True, [Option('-x')], [Argument('N', 9), Argument('N', 8)]],
+    );
+    test_one_or_more_match(
+        [OneOrMore(Option('-a'))->match(
+            [Option('-a'), Argument(None, 8), Option('-a')])],
+        [True, [Argument(None, 8)], [Option('-a'), Option('-a')]],
+    );
+    test_one_or_more_match(
+        [OneOrMore(Option('-a'))->match([Argument(None, 8),
+                                          Option('-x')])],
+        [False, [Argument(None, 8), Option('-x')], []],
+    );
+    test_one_or_more_match(
+        [OneOrMore(Required(Option('-a'), Argument('N')))->match(
+                [Option('-a'), Argument(None, 1), Option('-x'),
+                Option('-a'), Argument(None, 2)])],
+        [True, [Option('-x')],
+                [Option('-a'), Argument('N', 1), Option('-a'), Argument('N', 2)]],
+    );
+    test_one_or_more_match(
+        [OneOrMore(Optional(Argument('N')))->match([Argument(None, 9)])],
+        [(True, [], [Argument('N', 9)])],
+    );
+};
+
 done_testing;
 
 sub test_pattern_flat {
@@ -422,4 +468,5 @@ sub test_command_match { goto &test_argument_match }
 sub test_optional_match { goto &test_argument_match }
 sub test_required_match { goto &test_argument_match }
 sub test_either_match { goto &test_argument_match }
+sub test_one_or_more_match { goto &test_argument_match }
 

@@ -247,8 +247,53 @@ sub match { ... }
 package Docopt::OneOrMore;
 
 use parent -norequire, qw(Docopt::BranchPattern);
+use boolean;
+use Storable;
 
-sub match { ... }
+sub match {
+    my ($self, $left, $collected) = @_;
+    @{$self->children} == 1 or die;
+    $collected ||= [];
+
+    my $l = $left;
+    my $c = $collected;
+    my $l_ = undef;
+    my $matched = true;
+    my $times = 0;
+
+    while ($matched) {
+        # could it be that something didn't match but changed l or c?
+        ($matched, $l, $c) = $self->children->[0]->match($l, $c);
+        $times++ if $matched;
+        if (Storable::nfreeze(\$l_) eq Storable::nfreeze(\$l)) {
+            last;
+        }
+        $l_ = $l;
+    }
+    if ($times >= 1) {
+        return (true, $l, $c);
+    }
+    return (false, $left, $collected);
+
+#   def match(self, left, collected=None):
+#       assert len(self.children) == 1
+#       collected = [] if collected is None else collected
+#       l = left
+#       c = collected
+#       l_ = None
+#       matched = True
+#       times = 0
+#       while matched:
+#           # could it be that something didn't match but changed l or c?
+#           matched, l, c = self.children[0].match(l, c)
+#           times += 1 if matched else 0
+#           if l_ == l:
+#               break
+#           l_ = l
+#       if times >= 1:
+#           return True, l, c
+#       return False, left, collected
+}
 
 package Docopt::Either;
 
@@ -337,7 +382,7 @@ package Docopt::Option;
 
 use parent -norequire, qw(Docopt::LeafPattern);
 
-use Docopt::Util qw(repl string_strip string_partition);
+use Docopt::Util qw(repl string_strip string_partition defined_or);
 
 use Class::Accessor::Lite 0.05 (
     rw => [qw(short long argcount value)],
@@ -361,7 +406,7 @@ sub single_match {
 
     for (my $n=0; $n<@$left; $n++) {
         my $pattern = $left->[$n];
-        if ($self->name eq $pattern->name) {
+        if ($self->name eq defined_or($pattern->name, '')) {
             return ($n, $pattern);
         }
     }

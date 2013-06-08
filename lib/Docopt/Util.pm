@@ -5,7 +5,7 @@ use utf8;
 use parent qw(Exporter);
 use boolean;
 
-our @EXPORT_OK = qw(repl class_name string_strip string_partition in True False is_number);
+our @EXPORT_OK = qw(repl class_name string_strip string_partition in True False is_number defined_or);
 
 sub True()  { true }
 sub False() { false }
@@ -65,6 +65,8 @@ sub string_partition($$) {
         return ($str, '', '');
     }
 }
+
+sub defined_or { defined($_[0]) ? $_[0] : $_[1] }
 
 1;
 
