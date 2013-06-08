@@ -192,7 +192,24 @@ package Docopt::Optional;
 
 use parent -norequire, qw(Docopt::BranchPattern);
 
-sub match { ... }
+use boolean;
+
+sub match {
+    my ($self, $left, $collected) = @_;
+    $collected ||= [];
+
+    my $m;
+    for my $pattern (@{$self->children}) {
+        ($m, $left, $collected) = $pattern->match($left, $collected);
+    }
+    return (true, $left, $collected);
+
+#   def match(self, left, collected=None):
+#       collected = [] if collected is None else collected
+#       for pattern in self.children:
+#           m, left, collected = pattern.match(left, collected)
+#       return True, left, collected
+}
 
 package Docopt::OptionsShortcut;
 # Marker/placeholder for [options] shortcut.

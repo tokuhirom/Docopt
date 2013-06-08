@@ -261,6 +261,42 @@ subtest 'test_command_match' => sub {
     );
 };
 
+subtest 'test_optional_match' => sub {
+    test_optional_match(
+        [Optional(Option('-a'))->match([Option('-a')])],
+        [True, [], [Option('-a')]]
+    );
+    test_optional_match(
+        [Optional(Option('-a'))->match([])],
+        [True, [], []],
+    );
+    test_optional_match(
+        [Optional(Option('-a'))->match([Option('-x')])],
+        [True, [Option('-x')], []]
+    );
+    test_optional_match(
+        [Optional(Option('-a'), Option('-b'))->match([Option('-a')])],
+        [True, [], [Option('-a')]],
+    );
+    test_optional_match(
+        [Optional(Option('-a'), Option('-b'))->match([Option('-b')])],
+        [True, [], [Option('-b')]],
+    );
+    test_optional_match(
+        [Optional(Option('-a'), Option('-b'))->match([Option('-x')])],
+        [True, [Option('-x')], []]
+    );
+    test_optional_match(
+        [Optional(Argument('N'))->match([Argument(None, 9)])],
+        [True, [], [Argument('N', 9)]],
+    );
+    test_optional_match(
+        [Optional(Option('-a'), Option('-b'))->match(
+                [Option('-b'), Option('-x'), Option('-a')])],
+        [True, [Option('-x')], [Option('-a'), Option('-b')]],
+    );
+};
+
 done_testing;
 
 sub test_pattern_flat {
@@ -335,4 +371,5 @@ sub test_argument_match {
     ) or diag Dumper($got, $expected);
 }
 sub test_command_match { goto &test_argument_match }
+sub test_optional_match { goto &test_argument_match }
 
