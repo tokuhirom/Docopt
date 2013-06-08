@@ -155,6 +155,7 @@ use parent -norequire, qw(Docopt::Argument);
 use Class::Accessor::Lite (
     rw => [qw(name value)]
 );
+use boolean;
 
 sub new {
     my ($class, $name, $value) = @_;
@@ -164,7 +165,22 @@ sub new {
     }, $class;
 }
 
-sub single_match { ... }
+sub single_match {
+    my ($self, $left) = @_;
+    ref $left eq 'ARRAY' or die;
+
+    for (my $n=0; $n<@$left; $n++) {
+        my $pattern = $left->[$n];
+        if ($pattern->isa(Docopt::Argument::)) {
+            if ($pattern->value eq $self->name) {
+                return ($n, Docopt::Command->new($self->name, true));
+            } else {
+                last;
+            }
+        }
+    }
+    return (undef, undef);
+}
 
 package Docopt::Required;
 
@@ -194,8 +210,40 @@ sub match { ... }
 package Docopt::Either;
 
 use parent -norequire, qw(Docopt::BranchPattern);
+use boolean;
+use List::Util qw(reduce);
 
-sub match { ... }
+sub match {
+    my ($self, $left, $collected) = @_;
+    $collected ||= [];
+    my @outcomes;
+    for my $pattern (@{$self->children}) {
+        my @outcome = $pattern->match($left, $collected);
+        my $matched = $outcome[0];
+        if ($matched) {
+            push @outcomes, \@outcome;
+        }
+    }
+    if (@outcomes) {
+        my $retval = reduce {
+            @{$a->[1]} < @{$b->[1]}
+            ? $a : $b
+        } @outcomes;
+        return @$retval;
+    }
+    return (false, $left, $collected);
+
+#   def match(self, left, collected=None):
+#       collected = [] if collected is None else collected
+#       outcomes = []
+#       for pattern in self.children:
+#           matched, _, _ = outcome = pattern.match(left, collected)
+#           if matched:
+#               outcomes.append(outcome)
+#       if outcomes:
+#           return min(outcomes, key=lambda outcome: len(outcome[1]))
+#       return False, left, collected
+}
 
 package Docopt::Tokens;
 

@@ -9,6 +9,7 @@ use boolean;
 
 sub Option { Docopt::Option->new(@_) }
 sub Argument { Docopt::Argument->new(@_) }
+sub Command { Docopt::Command->new(@_) }
 
 sub Optional { Docopt::Optional->new(\@_) }
 sub Either { Docopt::Either->new(\@_) }
@@ -238,6 +239,28 @@ subtest 'test_argument_match' => sub {
     );
 };
 
+subtest 'test_command_match' => sub {
+    test_command_match(
+        [Command('c')->match([Argument(None, 'c')])],
+        [True, [], [Command('c', True)]]
+    );
+    test_command_match(
+        [Command('c')->match([Option('-x')])],
+        [False, [Option('-x')], []],
+    );
+    test_command_match(
+        [Command('c')->match([Option('-x'),
+                                Option('-a'),
+                                Argument(None, 'c')])],
+        [True, [Option('-x'), Option('-a')], [Command('c', True)]]
+    );
+    test_command_match(
+        [Either(Command('add', False), Command('rm', False))->match(
+            [Argument(None, 'rm')])],
+        [True, [], [Command('rm', True)]]
+    );
+};
+
 done_testing;
 
 sub test_pattern_flat {
@@ -311,4 +334,5 @@ sub test_argument_match {
         $expected,
     ) or diag Dumper($got, $expected);
 }
+sub test_command_match { goto &test_argument_match }
 
