@@ -316,6 +316,35 @@ subtest 'test_required_match' => sub {
     );
 };
 
+subtest 'test_either_match()' => sub {
+    test_either_match(
+        [Either(Option('-a'), Option('-b'))->match(
+                [Option('-a')])],
+        [(True, [], [Option('-a')])]
+    );
+    test_either_match(
+        [Either(Option('-a'), Option('-b'))->match(
+            [Option('-a'), Option('-b')])],
+        [(True, [Option('-b')], [Option('-a')])],
+    );
+    test_either_match(
+        [Either(Option('-a'), Option('-b'))->match(
+                [Option('-x')])],
+        [(False, [Option('-x')], [])]
+    );
+    test_either_match(
+        [Either(Option('-a'), Option('-b'), Option('-c'))->match(
+            [Option('-x'), Option('-b')])],
+        [(True, [Option('-x')], [Option('-b')])]
+    );
+    test_either_match(
+       [Either(Argument('M'),
+                  Required(Argument('N'), Argument('M')))->match(
+                                   [Argument(None, 1), Argument(None, 2)])],
+        [(True, [], [Argument('N', 1), Argument('M', 2)])]
+    );
+};
+
 done_testing;
 
 sub test_pattern_flat {
@@ -392,4 +421,5 @@ sub test_argument_match {
 sub test_command_match { goto &test_argument_match }
 sub test_optional_match { goto &test_argument_match }
 sub test_required_match { goto &test_argument_match }
+sub test_either_match { goto &test_argument_match }
 

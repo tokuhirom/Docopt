@@ -254,7 +254,6 @@ package Docopt::Either;
 
 use parent -norequire, qw(Docopt::BranchPattern);
 use boolean;
-use List::Util qw(reduce);
 
 sub match {
     my ($self, $left, $collected) = @_;
@@ -268,10 +267,12 @@ sub match {
         }
     }
     if (@outcomes) {
-        my $retval = reduce {
-            @{$a->[1]} < @{$b->[1]}
-            ? $a : $b
-        } @outcomes;
+        my $retval = shift @outcomes;
+        for (@outcomes) {
+            if (@{$_->[1]} < @{$retval->[1]}) {
+                $retval = $_;
+            }
+        }
         return @$retval;
     }
     return (false, $left, $collected);
