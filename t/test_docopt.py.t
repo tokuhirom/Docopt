@@ -5,6 +5,7 @@ use Test::More;
 use Data::Dumper;
 use Docopt;
 use Data::Dumper;
+use boolean;
 
 sub Option { Docopt::Option->new(@_) }
 sub Argument { Docopt::Argument->new(@_) }
@@ -18,8 +19,8 @@ sub OptionsShortcut() { Docopt::OptionsShortcut->new(\@_) }
 sub Tokens { Docopt::Tokens->new(\@_) }
 
 sub None() { undef }
-sub True() { \1 }
-sub False() { \0 }
+sub True() { true }
+sub False() { false }
 
 subtest 'test_pattern_flat' => sub {
     test_pattern_flat(

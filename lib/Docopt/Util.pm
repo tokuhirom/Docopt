@@ -3,11 +3,12 @@ use strict;
 use warnings;
 use utf8;
 use parent qw(Exporter);
+use boolean;
 
 our @EXPORT_OK = qw(repl class_name string_strip string_partition in True False is_number);
 
-sub True()  { \1 }
-sub False() { \0 }
+sub True()  { true }
+sub False() { false }
 
 use Data::Dumper; # serializer
 use Scalar::Util ();

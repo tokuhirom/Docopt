@@ -278,7 +278,7 @@ sub single_match {
 
 sub name {
     my $self = shift;
-    if (defined($self->long) && ref($self->long) ne 'SCALAR') {
+    if (defined($self->long) && !ref($self->long)) {
         $self->long;
     } else {
         $self->short;
@@ -321,6 +321,8 @@ sub __repl__ {
 
 package Docopt;
 
+use boolean;
+
 # long ::= '--' chars [ ( ' ' | '=' ) chars ] ;
 sub parse_long {
     my ($tokens, $options) = @_;
@@ -342,7 +344,7 @@ sub parse_long {
         $o = Docopt::Option->new(undef, $long, $argcount);
         push @$options, $o;
         if ($Docopt::DocoptExit) {
-            $o = Docopt::Option->new(undef, $long, $argcount, $argcount ? $value : \1);
+            $o = Docopt::Option->new(undef, $long, $argcount, $argcount ? $value : true);
         }
     } else {
         $o = Docopt::Option->new(
@@ -365,7 +367,7 @@ sub parse_long {
             }
         }
         if ($Docopt::DocoptExit) {
-            $o->value(defined($value) ? $value : \1);
+            $o->value(defined($value) ? $value : true);
         }
     }
     return [$o];
@@ -439,7 +441,7 @@ sub parse_shorts {
                 }
             }
             if ($Docopt::DocoptExit) {
-                $o->value(defined($value) ? $value : \1);
+                $o->value(defined($value) ? $value : true);
             }
         }
         push @parsed, $o;
