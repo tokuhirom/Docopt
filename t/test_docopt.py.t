@@ -530,6 +530,21 @@ subtest 'test_pattern_fix_identities_2' => sub {
 };
 
 
+subtest 'test_long_options_error_handling' => sub {
+#    with raises(DocoptLanguageError):
+#        docopt('Usage: prog --non-existent', '--non-existent')
+#    with raises(DocoptLanguageError):
+#        docopt('Usage: prog --non-existent')
+
+    isa_ok(exception {docopt('Usage: prog', '--non-existent')}, 'Docopt::Exceptions::DocoptExit');
+    isa_ok(exception {docopt('Usage: prog [--version --verbose]\n',
+               'Options: --version\n --verbose', '--ver')}, 'Docopt::Exceptions::DocoptExit');
+    isa_ok(exception {docopt("Usage: prog --long\nOptions: --long ARG")}, 'Docopt::Exceptions::DocoptLanguageError');
+    isa_ok(exception { docopt("Usage: prog --long ARG\nOptions: --long ARG", '--long') }, 'Docopt::Exceptions::DocoptExit');
+    isa_ok(exception { docopt("Usage: prog --long=ARG\nOptions: --long") }, 'Docopt::Exceptions::DocoptLanguageError');
+    isa_ok(exception { docopt("Usage: prog --long\nOptions: --long", '--long=ARG') }, 'Docopt::Exceptions::DocoptExit');
+};
+
 done_testing;
 
 sub test_pattern_flat {

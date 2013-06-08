@@ -480,13 +480,18 @@ sub match {
 package Docopt::Tokens;
 
 use Docopt::Util qw(repl);
+use Class::Accessor::Lite 0.05 (
+    rw => [qw(error source)],
+);
 
 sub new {
-    my ($class, $source) = @_;
+    my ($class, $source, $error) = @_;
+    $error ||= 'Docopt::Exceptions::DocoptExit';
+
     unless (ref $source) {
         $source = [split /\s+/, $source];
     }
-    bless [@$source], $class;
+    bless {source => [@$source], error => $error}, $class;
 }
 
 sub from_pattern {
@@ -494,22 +499,22 @@ sub from_pattern {
 
     $source =~ s/([\[\]\(\)\|]|\.\.\.)/ $1 /g;
     my @source = grep { defined($_) && length $_ > 0 } split /\s+|(\S*<.*?>)/, $source;
-    return Docopt::Tokens->new(\@source);
+    return Docopt::Tokens->new(\@source, 'Docopt::Exceptions::DocoptLanguageError');
 }
 
 sub move {
     my $self = shift;
-    shift @$self;
+    shift @{$self->{source}};
 }
 
 sub current {
     my $self = shift;
-    $self->[0];
+    $self->source->[0];
 }
 
 sub __repl__ {
     my $self = shift;
-    '[' . join(', ', map { repl($_) } @$self) . ']';
+    '[' . join(', ', map { repl($_) } @{$self->source}) . ']';
 }
 
 
@@ -602,7 +607,7 @@ use boolean;
 # long ::= '--' chars [ ( ' ' | '=' ) chars ] ;
 sub parse_long {
     my ($tokens, $options) = @_;
-    ref($options) eq 'ARRAY' or die;
+    ref($options) eq 'ARRAY' or Carp::confess "Options must be arrayref";
 
     my ($long, $eq, $value) = string_partition($tokens->move, '=');
     $long =~ /\A--/ or die;
@@ -631,13 +636,13 @@ sub parse_long {
         );
         if ($o->argcount == 0) {
             if (defined $value) {
-                die sprintf "%s must not have an argument", $o->long;
+                $tokens->error->throw(sprintf "%s must not have an argument", $o->long);
             }
         } else {
             if (not defined $value) {
                 if (
                     (not defined $tokens->current() ) || $tokens->current eq '==') {
-                    die sprintf "%s requires argument", $o->long
+                    $tokens->error->throw(sprintf "%s requires argument", $o->long);
                 } 
                 $value = $tokens->move;
             }
@@ -849,7 +854,7 @@ sub parse_atom {
         my $expr = parse_expr($tokens, $options);
         my $result = $pattern->new($expr);
         if (($tokens->move ||'') ne $matching) {
-            die "unmatched '$token'";
+            Docopt::Exceptions::DocoptLanguageError->throw("unmatched '$token'");
         }
         return [$result];
     } elsif ($token eq 'options') {
@@ -895,16 +900,18 @@ sub parse_atom {
 #       argv ::= [ long | shorts | argument ]* [ '--' [ argument ]* ] ;
 sub parse_argv {
     my ($tokens, $options, $options_first) = @_;
+    ref($options) eq 'ARRAY' or Carp::confess "Options must be arrayref";
+
     my @parsed;
     while (defined $tokens->current()) {
         if ($tokens->current() eq '--') {
-            return [@parsed, map { Docopt::Argument->new(undef, $_) } @{$tokens}];
+            return [@parsed, map { Docopt::Argument->new(undef, $_) } @{$tokens->source}];
         } elsif ($tokens->current() =~ /\A--/) {
             push @parsed, @{parse_long($tokens, $options)};
         } elsif ($tokens->current() =~ /\A-/ && $tokens->current ne '-') {
             push @parsed, @{parse_shorts($tokens, $options)};
         } elsif ($options_first) {
-            return [@parsed, map { Docopt::Argument->new(undef, $_) } @$tokens];
+            return [@parsed, map { Docopt::Argument->new(undef, $_) } @{$tokens->source}];
         } else {
             push @parsed, Docopt::Argument->new(undef, $tokens->move);
         }
@@ -919,7 +926,7 @@ sub parse_defaults {
 
     for my $s (parse_section('options:', $doc)) {
         # FIXME corner case "bla: options: --foo"
-        $s =~ s/\Aoptions://;
+        $s =~ s/\Aoptions://i;
         my @split = split /\n *(-\S+?)/, "\n" . $s;
         shift @split;
         my @split2;
@@ -986,13 +993,13 @@ sub docopt {
 
     my @usage_sections = parse_section('usage:', $doc);
     if (@usage_sections == 0) {
-        die '"usage:" (case-insensitive) not found.';
+        Docopt::Exceptions::DocoptLanguageError->throw('"usage:" (case-insensitive) not found.');
     }
     if (@usage_sections > 1) {
-        die 'More than one "usage:" (case-insensitive).';
+        Docopt::Exceptions::DocoptLanguageError->throw('More than one "usage:" (case-insensitive).');
     }
 
-    my $options = parse_defaults($doc);
+    my $options = [parse_defaults($doc)];
     my $pattern = parse_pattern(formal_usage($usage_sections[0]), $options);
     # [default] syntax for argument is disabled
     #for a in pattern.flat(Argument):
@@ -1034,16 +1041,31 @@ sub docopt {
 #   raise DocoptExit()
 }
 
-package Docopt::Exceptions::DocoptExit;
+package Docopt::Exception;
+
+use overload (
+    q{""} => \&stringify
+);
+
+sub stringify {
+    my $self = shift;
+    sprintf "[%s] %s", ref $self, $self->{message} || 'Died';
+}
 
 sub new {
-    my $class = shift;
-    bless {}, $class;
+    my ($class, $message) = @_;
+    bless {message => $message}, $class;
 }
 sub throw {
-    my $class = shift;
-    die $class->new();
+    my ($class, $message) = @_;
+    die $class->new($message);
 }
+
+package Docopt::Exceptions::DocoptLanguageError;
+use parent -norequire, qw(Docopt::Exception);
+
+package Docopt::Exceptions::DocoptExit;
+use parent -norequire, qw(Docopt::Exception);
 
 1;
 __END__
