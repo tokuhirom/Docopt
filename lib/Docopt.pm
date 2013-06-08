@@ -29,8 +29,7 @@ sub transform { ... }
 package Docopt::LeafPattern;
 use parent -norequire, qw(Docopt::Pattern);
 
-use Scalar::Util qw(looks_like_number);
-use Docopt::Util qw(repl class_name True False);
+use Docopt::Util qw(repl class_name True False is_number);
 
 use Class::Accessor::Lite (
     rw => [qw(name value)],
@@ -71,9 +70,9 @@ sub match {
     }
     my @left_ = (@left[0..$pos-1], @left[$pos+1..@left-1]);
     my @same_name = grep { $_->name eq $self->name } @collected;
-    if (looks_like_number($self->value) || ref($self->value) eq 'ARRAY') {
+    if (is_number($self->value) || ref($self->value) eq 'ARRAY') {
         my $increment;
-        if (looks_like_number($self->value)) {
+        if (is_number($self->value)) {
             $increment = 1;
         } else {
             $increment = ref($match->value) eq 'ARRAY' ? $match->value : $match->value;

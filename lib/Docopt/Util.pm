@@ -4,13 +4,21 @@ use warnings;
 use utf8;
 use parent qw(Exporter);
 
-our @EXPORT_OK = qw(repl class_name string_strip string_partition in True False);
+our @EXPORT_OK = qw(repl class_name string_strip string_partition in True False is_number);
 
 sub True()  { \1 }
 sub False() { \0 }
 
 use Data::Dumper; # serializer
 use Scalar::Util ();
+
+sub is_number {
+    my $stuff = shift;
+    return 0 if ref $stuff;
+    return 0 unless defined $stuff;
+    return 1 if $stuff =~ /\A[0-9]+\z/;
+    return 0;
+}
 
 sub in {
     my ($val, $patterns) = @_;
