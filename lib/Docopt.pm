@@ -284,8 +284,14 @@ sub single_match {
     return (undef, undef);
 }
 
-# TODO
-sub parse { ... }
+sub parse {
+    my ($class, $source) = @_;
+    $source =~ /(<\S*?>)/;
+    my $name = $1;
+    $source =~ /\[default: (.*)\]/i;
+    my $value = $1;
+    return $class->new($name, $value);
+}
 
 package Docopt::Command;
 use parent -norequire, qw(Docopt::Argument);
