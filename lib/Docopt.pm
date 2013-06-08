@@ -10,6 +10,8 @@ our $DocoptExit = 1;
 
 package Docopt::Pattern;
 
+use Docopt::Util qw(defined_or);
+
 sub new {
     my $class = shift;
     bless [], $class;
@@ -17,8 +19,57 @@ sub new {
 
 sub fix {
     my $self = shift;
-    # TODO: Do something
+    $self->fix_identities();
+    $self->fix_repeating_arguments();
     return $self;
+}
+
+# Make pattern-tree tips point to same object if they are equal.
+sub fix_identities {
+    my ($self, $uniq) = @_;
+
+#   if (!$self->can('children')) {
+#       return $self;
+#   }
+#   $uniq = defined_or($uniq, $self->flat);
+#   for (my $i=0; $i<@{$self->children}; $i++) {
+#       my $child = $self->children->[$i];
+#       if (not $child->can('children')) {
+#           in($child, $uniq) or die;
+#           $self->children->[$i] = grep {
+#       } else {
+#           $child->fix_identities($uniq);
+#       }
+#   }
+
+#   def fix_identities(self, uniq=None):
+#       """Make pattern-tree tips point to same object if they are equal."""
+#       if not hasattr(self, 'children'):
+#           return self
+#       uniq = list(set(self.flat())) if uniq is None else uniq
+#       for i, child in enumerate(self.children):
+#           if not hasattr(child, 'children'):
+#               assert child in uniq
+#               self.children[i] = uniq[uniq.index(child)]
+#           else:
+#               child.fix_identities(uniq)
+    # TODO
+}
+
+# Fix elements that should accumulate/increment values.
+sub fix_repeating_arguments {
+    # TODO
+#       either = [list(child.children) for child in transform(self).children]
+#       for case in either:
+#           for e in [child for child in case if case.count(child) > 1]:
+#               if type(e) is Argument or type(e) is Option and e.argcount:
+#                   if e.value is None:
+#                       e.value = []
+#                   elif type(e.value) is not list:
+#                       e.value = e.value.split()
+#               if type(e) is Command or type(e) is Option and e.argcount == 0:
+#                   e.value = 0
+#       return self
 }
 
 package Docopt;
@@ -88,6 +139,8 @@ sub match {
 }
 
 package Docopt::BranchPattern;
+
+use parent -norequire, qw(Docopt::Pattern);
 
 use Carp;
 

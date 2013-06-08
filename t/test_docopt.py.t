@@ -391,6 +391,55 @@ subtest 'test_one_or_more_match' => sub {
     );
 };
 
+# TODO
+#   subtest 'test_list_argument_match()' => sub {
+#       test_list_argument_match(
+#           [Required(Argument('N'), Argument('N'))->fix()->match(
+#                   [Argument(None, '1'), Argument(None, '2')])],
+#           [(True, [], [Argument('N', ['1', '2'])])],
+#       );
+#       test_list_argument_match(
+#       [OneOrMore(Argument('N'))->fix()->match(
+#           [Argument(None, '1'), Argument(None, '2'), Argument(None, '3')])],
+#                       [(True, [], [Argument('N', ['1', '2', '3'])])],
+#       );
+#       test_list_argument_match(
+#       [Required(Argument('N'), OneOrMore(Argument('N')))->fix()->match(
+#           [Argument(None, '1'), Argument(None, '2'), Argument(None, '3')])],
+#                       [(True, [], [Argument('N', ['1', '2', '3'])])],
+#       );
+#       test_list_argument_match(
+#       [Required(Argument('N'), Required(Argument('N')))->fix()->match(
+#               [Argument(None, '1'), Argument(None, '2')])],
+#                       [(True, [], [Argument('N', ['1', '2'])])],
+#       );
+#   };
+
+subtest 'test_basic_pattern_matching' => sub {
+    # ( -a N [ -x Z ] )
+    my $pattern = Required(Option('-a'), Argument('N'),
+                       Optional(Option('-x'), Argument('Z')));
+    # -a N
+    test_basic_pattern_matching(
+        [$pattern->match([Option('-a'), Argument(None, 9)])],
+        [(True, [], [Option('-a'), Argument('N', 9)])],
+    );
+    # -a -x N Z
+    test_basic_pattern_matching(
+        [$pattern->match([Option('-a'), Option('-x'),
+                          Argument(None, 9), Argument(None, 5)])],
+        [(True, [], [Option('-a'), Argument('N', 9),
+                        Option('-x'), Argument('Z', 5)])],
+    );
+    # -x N Z  # BZZ!
+    test_basic_pattern_matching(
+        [$pattern->match([Option('-x'),
+                          Argument(None, 9),
+                          Argument(None, 5)])],
+        [(False, [Option('-x'), Argument(None, 9), Argument(None, 5)], [])],
+    );
+};
+
 done_testing;
 
 sub test_pattern_flat {
@@ -469,4 +518,6 @@ sub test_optional_match { goto &test_argument_match }
 sub test_required_match { goto &test_argument_match }
 sub test_either_match { goto &test_argument_match }
 sub test_one_or_more_match { goto &test_argument_match }
+sub test_list_argument_match { goto &test_argument_match }
+sub test_basic_pattern_matching { goto &test_argument_match }
 
