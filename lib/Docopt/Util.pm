@@ -37,6 +37,8 @@ sub repl($) {
     my ($val) = @_;
     if (Scalar::Util::blessed($val) && $val->can('__repl__')) {
         $val->__repl__;
+    } elsif (ref($val) eq 'ARRAY') {
+        return '[' . join(', ', map { &repl($_) } @$val) . ']';
     } else {
         local $Data::Dumper::Terse=1;
         local $Data::Dumper::Indent=0;

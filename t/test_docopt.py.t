@@ -6,6 +6,7 @@ use Data::Dumper;
 use Docopt;
 use Data::Dumper;
 use boolean;
+use Docopt::Util qw(repl);
 
 sub Option { Docopt::Option->new(@_) }
 sub Argument { Docopt::Argument->new(@_) }
@@ -476,6 +477,27 @@ subtest 'test_pattern_either' => sub {
     );
 };
 
+subtest 'test_pattern_fix_repeating_arguments' => sub {
+    test_pattern_fix_repeating_arguments(
+        [Option('-a')->fix_repeating_arguments()],
+        [Option('-a')],
+    );
+    test_pattern_fix_repeating_arguments(
+        [Argument('N', None)->fix_repeating_arguments()],
+        [Argument('N', None)],
+    );
+    test_pattern_fix_repeating_arguments(
+        [Required(Argument('N'),
+                    Argument('N'))->fix_repeating_arguments()],
+            [Required(Argument('N', []), Argument('N', []))]
+    );
+    test_pattern_fix_repeating_arguments(
+        [Either(Argument('N'),
+                        OneOrMore(Argument('N')))->fix()],
+        [Either(Argument('N', []), OneOrMore(Argument('N', [])))],
+    );
+};
+
 done_testing;
 
 sub test_pattern_flat {
@@ -557,4 +579,5 @@ sub test_one_or_more_match { goto &test_argument_match }
 sub test_list_argument_match { goto &test_argument_match }
 sub test_basic_pattern_matching { goto &test_argument_match }
 sub test_pattern_either { goto &test_argument_match }
+sub test_pattern_fix_repeating_arguments { goto &test_argument_match }
 

@@ -23,24 +23,27 @@ sub fix {
     $self->fix_repeating_arguments();
     return $self;
 }
+use Docopt::Util qw(in);
+use Storable qw(nfreeze);
 
 # Make pattern-tree tips point to same object if they are equal.
 sub fix_identities {
     my ($self, $uniq) = @_;
 
-#   if (!$self->can('children')) {
-#       return $self;
-#   }
-#   $uniq = defined_or($uniq, $self->flat);
-#   for (my $i=0; $i<@{$self->children}; $i++) {
-#       my $child = $self->children->[$i];
-#       if (not $child->can('children')) {
-#           in($child, $uniq) or die;
-#           $self->children->[$i] = grep {
-#       } else {
-#           $child->fix_identities($uniq);
-#       }
-#   }
+    if (!$self->can('children')) {
+        return $self;
+    }
+    $uniq = defined_or($uniq, $self->flat);
+    for (my $i=0; $i<@{$self->children}; $i++) {
+        my $child = $self->children->[$i];
+        if (not $child->can('children')) {
+            local $Storable::canonical=1;
+            in(nfreeze($child), [map { nfreeze($_) } @$uniq]) or die;
+            ($self->children->[$i], ) = grep { nfreeze($_) eq nfreeze($child) } @$uniq;
+        } else {
+            $child->fix_identities($uniq);
+        }
+    }
 
 #   def fix_identities(self, uniq=None):
 #       """Make pattern-tree tips point to same object if they are equal."""
@@ -53,12 +56,43 @@ sub fix_identities {
 #               self.children[i] = uniq[uniq.index(child)]
 #           else:
 #               child.fix_identities(uniq)
-    # TODO
 }
 
+use Scalar::Util qw(refaddr);
+use Docopt::Util qw(repl);
+
+use v5.10.0;
 # Fix elements that should accumulate/increment values.
 sub fix_repeating_arguments {
-    # TODO
+    my $self = shift;
+
+    my $list_count = sub {
+        my ($list, $stuff) = @_;
+        my $n = 0;
+        for (@$list) {
+            local $Storable::canonical=1;
+            $n++ if Storable::nfreeze($stuff) eq Storable::nfreeze($_);
+        }
+        return $n;
+    };
+
+    my @either = map { $_->children } @{Docopt::transform($self)->children};
+    for my $case (@either) {
+        for my $e (grep { $list_count->($case, $_) > 1 } @$case) {
+            if ($e->isa('Docopt::Argument') || ($e->isa('Docopt::Option') && $e->argcount)) {
+                if (not defined $e->value) {
+                    $e->value([]);
+                } elsif (ref($e->value) ne 'ARRAY') {
+                    $e->value([split /\s+/, $e->value]);
+                }
+            }
+            if ($e->isa('Docopt::Command') || ($e->isa('Docopt::Option') && $e->argcount==0)) {
+                $e->value(0);
+            }
+        }
+    }
+    return $self;
+
 #       either = [list(child.children) for child in transform(self).children]
 #       for case in either:
 #           for e in [child for child in case if case.count(child) > 1]:
@@ -252,6 +286,7 @@ sub single_match {
     return (undef, undef);
 }
 
+# TODO
 sub parse { ... }
 
 package Docopt::Command;
@@ -347,8 +382,6 @@ package Docopt::OptionsShortcut;
 
 use parent -norequire, qw(Docopt::Optional);
 
-sub match { ... }
-
 package Docopt::OneOrMore;
 
 use parent -norequire, qw(Docopt::BranchPattern);
@@ -370,6 +403,7 @@ sub match {
         # could it be that something didn't match but changed l or c?
         ($matched, $l, $c) = $self->children->[0]->match($l, $c);
         $times++ if $matched;
+        local $Storable::canonical=1;
         if (Storable::nfreeze(\$l_) eq Storable::nfreeze(\$l)) {
             last;
         }
@@ -478,10 +512,6 @@ sub __repl__ {
 package Docopt;
 
 our $VERSION = "0.01";
-
-# TODO: test
-
-
 
 package Docopt::Option;
 
