@@ -31,6 +31,7 @@ sub in {
     my ($val, $patterns) = @_;
     for (@$patterns) {
         if (defined $_) {
+            return 0 if not defined $val;
             return 1 if $val eq $_;
         } else {
             return 1 if not defined $val;

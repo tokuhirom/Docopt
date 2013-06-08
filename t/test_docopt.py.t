@@ -7,6 +7,10 @@ use Docopt;
 use Data::Dumper;
 use boolean;
 use Docopt::Util qw(repl serialize);
+use Test::Fatal;
+
+sub transform { goto &Docopt::transform }
+sub docopt { goto &Docopt::docopt }
 
 sub Option { Docopt::Option->new(@_) }
 sub Argument { Docopt::Argument->new(@_) }
@@ -17,7 +21,6 @@ sub Either { Docopt::Either->new(\@_) }
 sub Required { Docopt::Required->new(\@_) }
 sub OneOrMore { Docopt::OneOrMore->new(\@_) }
 sub OptionsShortcut() { Docopt::OptionsShortcut->new(\@_) }
-sub transform { goto &Docopt::transform }
 
 sub Tokens { Docopt::Tokens->new(\@_) }
 
@@ -109,7 +112,17 @@ subtest 'test_option_name' => sub {
     is(Option(None, '--help')->name, '--help');
 };
 
-# TODO: test_commands
+DEBUG:
+subtest 'test_commands' => sub {
+    is_deeply(docopt('Usage: prog add', 'add'), {'add'=> True});
+    is_deeply(docopt('Usage: prog [add]', ''), {'add'=> undef});
+    is_deeply(docopt('Usage: prog [add]', 'add'), {'add'=> True});
+    is_deeply(docopt('Usage: prog (add|rm)', 'add'), {'add' => True, 'rm'=> undef});
+    is_deeply(docopt('Usage: prog (add|rm)', 'rm'), {'add'=> undef, 'rm'=> True});
+    is_deeply(docopt('Usage: prog a b', 'a b'), {'a' => True, 'b' => True});
+#   with raises(DocoptExit):
+    isa_ok(exception { docopt('Usage: prog a b', 'b a') }, 'Docopt::Exceptions::DocoptExit');
+};
 
 subtest 'test_formal_usage' => sub {
     my $doc = "

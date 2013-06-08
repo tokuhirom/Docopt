@@ -4,7 +4,7 @@ use warnings FATAL => 'all';
 
 package Docopt;
 
-use Docopt::Util qw(string_partition in);
+use Docopt::Util qw(string_partition in serialize);
 
 our $DocoptExit = 1;
 
@@ -189,9 +189,9 @@ sub __repl__ {
 sub flat {
     my ($self, $types) = @_;
     if (!defined($types) || $self->isa($types)) {
-        return $self;
+        return [$self];
     } else {
-        return ();
+        return [];
     }
 }
 sub match {
@@ -951,25 +951,93 @@ sub formal_usage {
 }
 
 
-sub extras { ... }
+use List::MoreUtils qw(any);
+sub extras {
+    my ($help, $version, $options, $doc) = @_;
+    if ($help && any { in($_->name, ['-h', '--help']) && $_->value } @$options) {
+        print $doc . "\n";
+        exit(0);
+    }
+    if ($version && grep { $_->name eq '--version' } @$options) {
+        print "$version\n";
+        exit(0);
+    }
+
+#ef extras(help, version, options, doc):
+#   if help and any((o.name in ('-h', '--help')) and o.value for o in options):
+#       print(doc.strip("\n"))
+#       sys.exit()
+#   if version and any(o.name == '--version' and o.value for o in options):
+#       print(version)
+#       sys.exit()
+}
 
 sub docopt {
-    my %args = @_;
+    # def docopt(doc, argv=None, help=True, version=None, options_first=False):
+    my ($doc, $argv, $help, $version, $option_first) = @_;
+    if (@_<=2) { $help = true }
+    $argv ||= \@ARGV;
 
-    my $argv = exists($args{argv}) ? $args{argv} : \@ARGV;
-    my $doc = $args{doc};
     my @usage_sections = parse_section('usage:', $doc);
     if (@usage_sections == 0) {
         die '"usage:" (case-insensitive) not found.';
     }
-    if (@usage_sections == 1) {
+    if (@usage_sections > 1) {
         die 'More than one "usage:" (case-insensitive).';
     }
 
     my $options = parse_defaults($doc);
     my $pattern = parse_pattern(formal_usage($usage_sections[0]), $options);
+    # [default] syntax for argument is disabled
+    #for a in pattern.flat(Argument):
+    #    same_name = [d for d in arguments if d.name == a.name]
+    #    if same_name:
+    #        a.value = same_name[0].value
+    $argv = parse_argv(Docopt::Tokens->new($argv), $options, $option_first);
+    my $parse_options = $pattern->flat(Docopt::Option::);
+    for my $options_shortcut (@{$pattern->flat(Docopt::OptionsShortcut::)}) {
+        my @doc_options = parse_defaults($doc);
+        $options_shortcut->children(grep { !in(serialize($_), [map { serialize($_) } @$parse_options]) } @doc_options);
+        #if any_options:
+        #    options_shortcut.children += [Option(o.short, o.long, o.argcount)
+        #                    for o in argv if type(o) is Option]
+    }
+    extras($help, $version, $argv, $doc);
+    my ($matched, $left, $collected) = $pattern->fix->match($argv);
+    if ($matched && serialize($left) eq serialize([])) { # better error message if left?
+        return +{
+            map {
+                $_->name => $_->value
+            } @{$pattern->flat}, @$collected
+        };
+    }
+    Docopt::Exceptions::DocoptExit->throw();
+
+#   argv = parse_argv(Tokens(argv), list(options), options_first)
+#   pattern_options = set(pattern.flat(Option))
+#   for options_shortcut in pattern.flat(OptionsShortcut):
+#       doc_options = parse_defaults(doc)
+#       options_shortcut.children = list(set(doc_options) - pattern_options)
+#       #if any_options:
+#       #    options_shortcut.children += [Option(o.short, o.long, o.argcount)
+#       #                    for o in argv if type(o) is Option]
+#   extras(help, version, argv, doc)
+#   matched, left, collected = pattern.fix().match(argv)
+#   if matched and left == []:  # better error message if left?
+#       return Dict((a.name, a.value) for a in (pattern.flat() + collected))
+#   raise DocoptExit()
 }
 
+package Docopt::Exceptions::DocoptExit;
+
+sub new {
+    my $class = shift;
+    bless {}, $class;
+}
+sub throw {
+    my $class = shift;
+    die $class->new();
+}
 
 1;
 __END__
