@@ -1012,13 +1012,17 @@ sub docopt {
     my ($doc, $argv, $help, $version, $option_first) = @_;
     if (not defined $doc) {
         # Should I selecte 'SYNOPSIS' section?
-        require Pod::Simple::Text;
+        require Pod::Usage;
+#       require Pod::Simple::Text;
 
         open my $fh, '>', \$doc
             or die $!;
-        my $parser = Pod::Simple::Text->new();
-        $parser->{output_fh} = $fh;
-        $parser->parse_file($0);
+        my $parser = Pod::Usage->new(USAGE_OPTIONS => +{});
+        $parser->select('(?:SYNOPSIS|USAGE)\s*');
+        $parser->parse_from_file($0, $fh);
+#       my $parser = Pod::Simple::Text->new();
+#       $parser->{output_fh} = $fh;
+#       $parser->parse_file($0);
     }
     if (@_<=2) { $help = true }
     $argv ||= \@ARGV;

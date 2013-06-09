@@ -10,7 +10,7 @@ use JSON;
 our $VERSION = '0.01';
 
 my $ret = docopt(undef, undef, 1, $VERSION);
-print JSON->new->convert_blessed->encode($ret), "\n";
+print JSON->new->canonical(1)->convert_blessed->encode($ret), "\n";
 
 __END__
 
@@ -20,8 +20,7 @@ simple - very simple example
 
 =head1 SYNOPSIS
 
-    Usage:
-        simple [--foo]
+    simple [--foo]
 
 =head1 DESCRIPTION
 

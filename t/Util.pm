@@ -9,10 +9,9 @@ use Data::Dumper;
 
 use parent qw(Exporter);
 
-our @EXPORT = qw(transform docopt Option Argument Command Optional Either Required OneOrMore OptionsShortcut Tokens None True False is_deeply_ex);
+our @EXPORT = qw(transform Option Argument Command Optional Either Required OneOrMore OptionsShortcut Tokens None True False is_deeply_ex);
 
 sub transform { goto &Docopt::transform }
-sub docopt { goto &Docopt::docopt }
 
 sub Option { Docopt::Option->new(@_) }
 sub Argument { Docopt::Argument->new(@_) }
