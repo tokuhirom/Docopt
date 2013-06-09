@@ -639,6 +639,17 @@ subtest 'test_language_errors' => sub {
     );
 };
 
+subtest 'test_issue_40' => sub {
+    isa_ok(
+        exception { docopt('usage: prog --help-commands | --help', '--help') },
+        'SystemExit',
+    );
+    is_deeply(
+        docopt('usage: prog --aabb | --aa', '--aa'),
+        { '--aabb' => undef, '--aa' => true }
+    );
+};
+
 done_testing;
 
 sub test_pattern_flat {
