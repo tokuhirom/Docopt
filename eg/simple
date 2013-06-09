@@ -1,0 +1,26 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use FindBin;
+use lib "$FindBin::Bin/../lib/";
+use Docopt;
+use Data::Dumper;
+use JSON;
+
+my $ret = docopt();
+print JSON->new->convert_blessed->encode($ret), "\n";
+
+__END__
+
+=head1 NAME
+
+simple - very simple example
+
+=head1 SYNOPSIS
+
+    Usage:
+        simple [--foo]
+
+=head1 DESCRIPTION
+
+Hah!

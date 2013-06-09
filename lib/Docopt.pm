@@ -105,6 +105,10 @@ sub fix_repeating_arguments {
 
 package Docopt;
 
+use parent qw(Exporter);
+
+our @EXPORT = qw(docopt);
+
 use List::MoreUtils qw(any);
 use Scalar::Util qw(blessed refaddr);
 use Docopt::Util qw(repl pyprint serialize);
@@ -962,6 +966,7 @@ sub parse_defaults {
 
 sub parse_section {
     my ($name, $source) = @_;
+    defined($source) or Carp::confess("Missing source");
     my @s;
     while ($source =~ /^([^\n]*${name}[^\n]*\n?(?:[ \t].*?(?:\n|$))*)/img) {
         local $_ = $1;
@@ -1005,6 +1010,15 @@ sub extras {
 sub docopt {
     # def docopt(doc, argv=None, help=True, version=None, options_first=False):
     my ($doc, $argv, $help, $version, $option_first) = @_;
+    if (not defined $doc) {
+        require Pod::Simple::Text;
+
+        open my $fh, '>', \$doc
+            or die $!;
+        my $parser = Pod::Simple::Text->new();
+        $parser->{output_fh} = $fh;
+        $parser->parse_file($0);
+    }
     if (@_<=2) { $help = true }
     $argv ||= \@ARGV;
 
