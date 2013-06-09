@@ -993,7 +993,7 @@ sub extras {
         print $doc . "\n";
         exit(0);
     }
-    if ($version && grep { $_->name eq '--version' } @$options) {
+    if ($version && grep { defined($_->name) && $_->name eq '--version' } @$options) {
         print "$version\n";
         exit(0);
     }
