@@ -3,15 +3,36 @@ use warnings;
 use utf8;
 use Test::More;
 use Docopt;
+use Docopt::Util qw(repl pyprint);
+use Data::Dumper;
+use t::Util;
+use boolean;
 
-sub Option { Docopt::Option->new(@_) }
-sub Argument { Docopt::Argument->new(@_) }
+subtest 'match' => sub {
+    my $argv=[Argument(None, 'this')];
+    my $patterns=Required(Argument('<p>', []));
+    my ($match, $left, $collected) = $patterns->match($argv);
+    is_deeply($match, true);
+    is_deeply($left, []);
+    is_deeply($collected, [Argument('<p>', ['this'])]);
+} or die;
 
-sub Optional { Docopt::Optional->new(\@_) }
-sub Either { Docopt::Either->new(\@_) }
-sub Required { Docopt::Required->new(\@_) }
-sub OneOrMore { Docopt::OneOrMore->new(\@_) }
-sub OptionsShortcut() { Docopt::OptionsShortcut->new(\@_) }
+subtest 'transform' => sub {
+    my $got = transform(Required(OneOrMore(Optional(Argument('<p>', undef)))));
+    is_deeply(
+        $got,
+        Either(Required(Argument('<p>', None), Argument('<p>', None))),
+    ) or die repl($got); 
+};
+
+subtest 'fix_repeating_arguments' => sub {
+    my $stuff = Required(OneOrMore(Optional(Argument('<p>', undef))));
+    my $got= $stuff->fix_repeating_arguments();
+    is_deeply(
+        $got,
+        Required(OneOrMore(Optional(Argument('<p>', []))))
+    ) or die repl($got); 
+};
 
 subtest 'parse_section' => sub {
     my @ret = Docopt::parse_section('usage', <<'...');

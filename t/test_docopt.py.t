@@ -7,27 +7,9 @@ BEGIN { *CORE::GLOBAL::exit = sub (;$) { die bless {}, 'SystemExit' } };
 use Docopt;
 use Data::Dumper;
 use boolean;
-use Docopt::Util qw(repl serialize);
+use Docopt::Util qw(repl serialize pyprint);
 use Test::Fatal;
-
-sub transform { goto &Docopt::transform }
-sub docopt { goto &Docopt::docopt }
-
-sub Option { Docopt::Option->new(@_) }
-sub Argument { Docopt::Argument->new(@_) }
-sub Command { Docopt::Command->new(@_) }
-
-sub Optional { Docopt::Optional->new(\@_) }
-sub Either { Docopt::Either->new(\@_) }
-sub Required { Docopt::Required->new(\@_) }
-sub OneOrMore { Docopt::OneOrMore->new(\@_) }
-sub OptionsShortcut() { Docopt::OptionsShortcut->new(\@_) }
-
-sub Tokens { Docopt::Tokens->new(\@_) }
-
-sub None() { undef }
-sub True() { true }
-sub False() { false }
+use t::Util;
 
 subtest 'test_pattern_flat' => sub {
     test_pattern_flat(
@@ -671,6 +653,59 @@ subtest 'test_count_multiple_flags' => sub {
     is_deeply(
         docopt('usage: prog [--ver --ver]', '--ver --ver'),
         {'--ver' => 2}
+    );
+};
+
+subtest 'test_any_options_parameter' => sub {
+    isa_ok(
+        exception { docopt('usage: prog [options]', '-foo --bar --spam=eggs') },
+        'Docopt::Exceptions::DocoptExit',
+    );
+#    assert docopt('usage: prog [options]', '-foo --bar --spam=eggs',
+#                  any_options=True) == {'-f': True, '-o': 2,
+#                                         '--bar': True, '--spam': 'eggs'}
+    isa_ok(
+        exception {
+            docopt('usage: prog [options]', '--foo --bar --bar')
+        },
+        'Docopt::Exceptions::DocoptExit',
+    );
+#    assert docopt('usage: prog [options]', '--foo --bar --bar',
+#                  any_options=True) == {'--foo': True, '--bar': 2}
+    isa_ok(
+        exception {
+            docopt('usage: prog [options]', '--bar --bar --bar -ffff')
+        },
+        'Docopt::Exceptions::DocoptExit',
+    );
+#    assert docopt('usage: prog [options]', '--bar --bar --bar -ffff',
+#                  any_options=True) == {'--bar': 3, '-f': 4}
+    isa_ok(
+        exception {
+            docopt('usage: prog [options]', '--long=arg --long=another')
+        },
+        'Docopt::Exceptions::DocoptExit',
+    );
+#    assert docopt('usage: prog [options]', '--long=arg --long=another',
+#                  any_options=True) == {'--long': ['arg', 'another']}
+};
+
+subtest 'test_default_value_for_positional_arguments' => sub {
+    # disabled right now
+    is_deeply(
+        docopt("usage: prog [<p>]\n\n<p>  [default: x]", ""),
+            {'<p>' => None}
+    #       {'<p>': 'x'}
+    );
+    is_deeply(
+        docopt("usage: prog [<p>]...\n\n<p>  [default: x y]", ""),
+            {'<p>' => []}
+    #       {'<p>': ['x', 'y']}
+    );
+    is_deeply_ex(
+        docopt("usage: prog [<p>]...\n\n<p>  [default: x y]", "this"),
+        {'<p>' => ['this']}
+    #       {'<p>': ['this']}
     );
 };
 

@@ -5,7 +5,7 @@ use utf8;
 use parent qw(Exporter);
 use boolean;
 
-our @EXPORT_OK = qw(repl class_name string_strip string_partition in True False is_number defined_or serialize);
+our @EXPORT_OK = qw(repl class_name string_strip string_partition in True False is_number defined_or serialize pyprint);
 
 sub True()  { true }
 sub False() { false }
@@ -13,6 +13,10 @@ sub False() { false }
 use Data::Dumper; # serializer
 use Scalar::Util ();
 use Storable ();
+
+sub pyprint {
+    print Docopt::Util::repl($_[0]), $/;
+}
 
 sub serialize($) {
     local $Storable::canonical=1;

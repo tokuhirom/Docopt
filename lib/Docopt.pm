@@ -72,6 +72,7 @@ sub fix_repeating_arguments {
         return $n;
     };
 
+    # print repl(Docopt::transform($self));
     my @either = map { $_->children } @{Docopt::transform($self)->children};
     for my $case (@either) {
         for my $e (grep { $list_count->($case, $_) > 1 } @$case) {
@@ -106,7 +107,7 @@ package Docopt;
 
 use List::MoreUtils qw(any);
 use Scalar::Util qw(blessed refaddr);
-use Docopt::Util qw(repl);
+use Docopt::Util qw(repl pyprint serialize);
 
 # Expand pattern into an (almost) equivalent one, but with single Either.
 #   Example: ((-a | -b) (-c | -d)) => (-a -c | -a -d | -b -c | -b -d)
@@ -114,27 +115,36 @@ use Docopt::Util qw(repl);
 sub transform {
     my ($pattern) = @_;
 
+#   pyprint($pattern);
     my @results;
     my @groups = [$pattern];
     while (@groups) {
         my $children = shift @groups;
+#       pyprint($children);
         my @parents = qw(Docopt::Required Docopt::Optional Docopt::OptionsShortcut Docopt::Either Docopt::OneOrMore);
         if (any { in($_, [map { blessed $_ } @$children]) } @parents) {
+#           print "  ANY\n";
             my $child = [grep { in(blessed $_, \@parents) } @$children]->[0];
             $children = [ grep { refaddr($child) ne refaddr($_) } @$children ];
             if ($child->isa('Docopt::Either')) {
+#               print "    EITHER\n";
                 for (@{$child->children}) {
                     push @groups, [$_, @{$children}];
                 }
             } elsif ($child->isa('Docopt::OneOrMore')) {
-                push @groups, [@{$child->children}, @{$child->children}, @$children];
+#               print "    ONEORMORE\n";
+                # I need copying.
+                push @groups, [@{$child->children}, @{Storable::dclone($child->children)}, @$children];
             } else {
+#               print "    OTHER\n";
                 push @groups, [@{$child->children}, @$children];
             }
         } else {
+#           print "  JUST PUSH\n";
             push @results, $children;
         }
     }
+#   pyprint(\@results);
     return Docopt::Either->new([map { Docopt::Required->new($_) } @results]);
 
 #ef transform(pattern):
@@ -208,7 +218,7 @@ sub match {
         if (is_number($self->value)) {
             $increment = 1;
         } else {
-            $increment = ref($match->value) eq 'ARRAY' ? $match->value : $match->value;
+            $increment = ref($match->value) eq 'ARRAY' ? $match->value : [$match->value];
         }
         unless (@same_name) {
             $match->value($increment);
@@ -1003,6 +1013,7 @@ sub docopt {
 
     my $options = [parse_defaults($doc)];
     my $pattern = parse_pattern(formal_usage($usage_sections[0]), $options);
+    pyprint($pattern);
     # [default] syntax for argument is disabled
     #for a in pattern.flat(Argument):
     #    same_name = [d for d in arguments if d.name == a.name]
@@ -1018,7 +1029,9 @@ sub docopt {
         #                    for o in argv if type(o) is Option]
     }
     extras($help, $version, $argv, $doc);
+    pyprint($pattern->fix);
     my ($matched, $left, $collected) = $pattern->fix->match($argv);
+    pyprint([$matched, $left, $collected]);
     if ($matched && serialize($left) eq serialize([])) { # better error message if left?
         return +{
             map {
