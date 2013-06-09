@@ -734,7 +734,22 @@ subtest 'test_options_first()' => sub {
                                           '<args>'=> ['this', 'that', '--opt']});
 };
 
+subtest 'test_issue_68_options_shortcut_does_not_include_options_in_usage_pattern' => sub {
+    my $args = docopt("usage: prog [-ab] [options]\noptions: -x\n -y", '-ax');
+    # Need to use `is` (not `==`) since we want to make sure
+    # that they are not 1/0, but strictly True/False:
+    is_deeply($args->{'-a'}, True);
+    is_deeply($args->{'-b'}, undef);
+    is_deeply($args->{'-x'}, True);
+    is_deeply($args->{'-y'}, undef);
+};
 
+subtest 'test_issue_65_evaluate_argv_when_called_not_when_imported' => sub {
+    local @ARGV = qw(-a);
+    is_deeply(docopt('usage: prog [-ab]'), {'-a' => True, '-b' => undef});
+    local @ARGV = qw(-b);
+    is_deeply(docopt('usage: prog [-ab]'), {'-a' => undef, '-b'=> True});
+};
 
 done_testing;
 

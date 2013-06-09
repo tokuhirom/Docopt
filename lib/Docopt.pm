@@ -1015,6 +1015,7 @@ sub docopt {
     if (@usage_sections > 1) {
         Docopt::Exceptions::DocoptLanguageError->throw('More than one "usage:" (case-insensitive).');
     }
+    $Docopt::Exceptions::DocoptExit::USAGE = $usage_sections[0];
 
     my $options = [parse_defaults($doc)];
     my $pattern = parse_pattern(formal_usage($usage_sections[0]), $options);
@@ -1024,6 +1025,7 @@ sub docopt {
     #    same_name = [d for d in arguments if d.name == a.name]
     #    if same_name:
     #        a.value = same_name[0].value
+    # pyprint($argv);
     $argv = parse_argv(Docopt::Tokens->new($argv), $options, $option_first);
     my $parse_options = $pattern->flat(Docopt::Option::);
     for my $options_shortcut (@{$pattern->flat(Docopt::OptionsShortcut::)}) {
@@ -1035,7 +1037,7 @@ sub docopt {
     }
     extras($help, $version, $argv, $doc);
     #pyprint($pattern->fix);
-    #pyprint($argv);
+    # pyprint($argv);
     my ($matched, $left, $collected) = $pattern->fix->match($argv);
     #pyprint([$matched, $left, $collected]);
     if ($matched && serialize($left) eq serialize([])) { # better error message if left?
@@ -1065,7 +1067,7 @@ sub docopt {
 package Docopt::Exception;
 
 use overload (
-    q{""} => \&stringify
+    q{""} => 'stringify',
 );
 
 sub stringify {
@@ -1087,6 +1089,13 @@ use parent -norequire, qw(Docopt::Exception);
 
 package Docopt::Exceptions::DocoptExit;
 use parent -norequire, qw(Docopt::Exception);
+
+our $USAGE;
+
+sub stringify {
+    my $self = shift;
+    sprintf "%s\n%s\n", $self->{message} || '', $USAGE;
+}
 
 1;
 __END__
