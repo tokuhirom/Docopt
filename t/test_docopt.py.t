@@ -751,6 +751,21 @@ subtest 'test_issue_65_evaluate_argv_when_called_not_when_imported' => sub {
     is_deeply(docopt('usage: prog [-ab]'), {'-a' => undef, '-b'=> True});
 };
 
+
+subtest 'test_issue_71_double_dash_is_not_a_valid_option_argument' => sub {
+    isa_ok(
+        exception { docopt('usage: prog [--log=LEVEL] [--] <args>...', '--log -- 1 2') },
+        'Docopt::Exceptions::DocoptExit',
+    );
+    isa_ok(
+        exception {
+            docopt("usage: prog [-l LEVEL] [--] <args>...
+                    options: -l LEVEL", "-l -- 1 2")
+        },
+        'Docopt::Exceptions::DocoptExit',
+    );
+};
+
 done_testing;
 
 sub test_pattern_flat {

@@ -658,7 +658,7 @@ sub parse_long {
         } else {
             if (not defined $value) {
                 if (
-                    (not defined $tokens->current() ) || $tokens->current eq '==') {
+                    (not defined $tokens->current() ) || $tokens->current eq '--') {
                     $tokens->error->throw(sprintf "%s requires argument", $o->long);
                 } 
                 $value = $tokens->move;
@@ -730,7 +730,7 @@ sub parse_shorts {
             if ($o->argcount != 0) {
                 if ($left eq '') {
                     if (not defined($tokens->current) || $tokens->current eq '--') {
-                        die "$short requires argument";
+                        $tokens->error->throw("$short requires argument");
                     }
                     $value = $tokens->move;
                 } else {
