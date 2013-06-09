@@ -1011,6 +1011,7 @@ sub docopt {
     # def docopt(doc, argv=None, help=True, version=None, options_first=False):
     my ($doc, $argv, $help, $version, $option_first) = @_;
     if (not defined $doc) {
+        # Should I selecte 'SYNOPSIS' section?
         require Pod::Simple::Text;
 
         open my $fh, '>', \$doc
