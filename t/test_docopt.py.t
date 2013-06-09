@@ -720,6 +720,21 @@ subtest 'test_issue_59' => sub {
     );
 };
 
+subtest 'test_options_first()' => sub {
+    is_deeply_ex(docopt('usage: prog [--opt] [<args>...]',
+                  '--opt this that'), {'--opt'=> True,
+                                         '<args>'=> ['this', 'that']});
+    is_deeply_ex(docopt('usage: prog [--opt] [<args>...]',
+                  'this that --opt'), {'--opt'=> True,
+                                         '<args>'=> ['this', 'that']});
+    is_deeply_ex(docopt('usage: prog [--opt] [<args>...]',
+                  'this that --opt',
+                  True,undef,
+                  True), {'--opt'=> undef,
+                                          '<args>'=> ['this', 'that', '--opt']});
+};
+
+
 
 done_testing;
 

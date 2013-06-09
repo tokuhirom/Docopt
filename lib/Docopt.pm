@@ -224,7 +224,12 @@ sub match {
             $match->value($increment);
             return (True, \@left_, [@collected, $match]);
         }
-        $same_name[0]->{value} += $increment;
+        if (ref $same_name[0]->value eq 'ARRAY') {
+            $same_name[0]->value([@{$same_name[0]->value}, ref($increment) eq 'ARRAY' ? @$increment : $increment]);
+        } else {
+            ref($increment) ne 'ARRAY' or Carp::confess("Invalid addition");
+            $same_name[0]->value($same_name[0]->value + $increment);
+        }
         return (True, \@left_, \@collected);
     }
     return (True, \@left_, [@collected, $match]);
@@ -1013,7 +1018,7 @@ sub docopt {
 
     my $options = [parse_defaults($doc)];
     my $pattern = parse_pattern(formal_usage($usage_sections[0]), $options);
-    pyprint($pattern);
+    # pyprint($pattern);
     # [default] syntax for argument is disabled
     #for a in pattern.flat(Argument):
     #    same_name = [d for d in arguments if d.name == a.name]
@@ -1029,9 +1034,10 @@ sub docopt {
         #                    for o in argv if type(o) is Option]
     }
     extras($help, $version, $argv, $doc);
-    pyprint($pattern->fix);
+    #pyprint($pattern->fix);
+    #pyprint($argv);
     my ($matched, $left, $collected) = $pattern->fix->match($argv);
-    pyprint([$matched, $left, $collected]);
+    #pyprint([$matched, $left, $collected]);
     if ($matched && serialize($left) eq serialize([])) { # better error message if left?
         return +{
             map {
