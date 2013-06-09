@@ -391,29 +391,28 @@ subtest 'test_one_or_more_match' => sub {
     );
 };
 
-# TODO
-#   subtest 'test_list_argument_match()' => sub {
-#       test_list_argument_match(
-#           [Required(Argument('N'), Argument('N'))->fix()->match(
-#                   [Argument(None, '1'), Argument(None, '2')])],
-#           [(True, [], [Argument('N', ['1', '2'])])],
-#       );
-#       test_list_argument_match(
-#       [OneOrMore(Argument('N'))->fix()->match(
-#           [Argument(None, '1'), Argument(None, '2'), Argument(None, '3')])],
-#                       [(True, [], [Argument('N', ['1', '2', '3'])])],
-#       );
-#       test_list_argument_match(
-#       [Required(Argument('N'), OneOrMore(Argument('N')))->fix()->match(
-#           [Argument(None, '1'), Argument(None, '2'), Argument(None, '3')])],
-#                       [(True, [], [Argument('N', ['1', '2', '3'])])],
-#       );
-#       test_list_argument_match(
-#       [Required(Argument('N'), Required(Argument('N')))->fix()->match(
-#               [Argument(None, '1'), Argument(None, '2')])],
-#                       [(True, [], [Argument('N', ['1', '2'])])],
-#       );
-#   };
+subtest 'test_list_argument_match()' => sub {
+        test_list_argument_match(
+            [Required(Argument('N'), Argument('N'))->fix()->match(
+                    [Argument(None, '1'), Argument(None, '2')])],
+            [(True, [], [Argument('N', ['1', '2'])])],
+        );
+        test_list_argument_match(
+            [OneOrMore(Argument('N'))->fix()->match(
+                [Argument(None, '1'), Argument(None, '2'), Argument(None, '3')])],
+                        [(True, [], [Argument('N', ['1', '2', '3'])])],
+        );
+        test_list_argument_match(
+        [Required(Argument('N'), OneOrMore(Argument('N')))->fix()->match(
+            [Argument(None, '1'), Argument(None, '2'), Argument(None, '3')])],
+                        [(True, [], [Argument('N', ['1', '2', '3'])])],
+        );
+        test_list_argument_match(
+        [Required(Argument('N'), Required(Argument('N')))->fix()->match(
+                [Argument(None, '1'), Argument(None, '2')])],
+                        [(True, [], [Argument('N', ['1', '2'])])],
+        );
+};
 
 subtest 'test_basic_pattern_matching' => sub {
     # ( -a N [ -x Z ] )
