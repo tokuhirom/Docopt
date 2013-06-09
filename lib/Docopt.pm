@@ -58,7 +58,6 @@ sub fix_identities {
 use Scalar::Util qw(refaddr);
 use Docopt::Util qw(repl serialize);
 
-use v5.10.0;
 # Fix elements that should accumulate/increment values.
 sub fix_repeating_arguments {
     my $self = shift;
