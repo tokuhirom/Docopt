@@ -11,6 +11,8 @@ use Docopt::Util qw(repl serialize pyprint);
 use Test::Fatal;
 use t::Util;
 
+*parse_section = *Docopt::parse_section;
+
 subtest 'test_pattern_flat' => sub {
     test_pattern_flat(
         Required(OneOrMore(Argument('N')),
@@ -764,6 +766,41 @@ subtest 'test_issue_71_double_dash_is_not_a_valid_option_argument' => sub {
         },
         'Docopt::Exceptions::DocoptExit',
     );
+};
+
+subtest 'test_parse_section' => sub {
+    my $usage = qq{usage: this
+
+usage:hai
+usage: this that
+
+usage: foo
+       bar
+
+PROGRAM USAGE:
+ foo
+ bar
+usage:
+\ttoo
+\ttar
+Usage: eggs spam
+BAZZ
+usage: pit stop};
+
+    is_deeply([parse_section('usage:', 'foo bar fizz buzz')], []);
+    is_deeply([parse_section('usage:', 'usage: prog')], ['usage: prog']);
+    is_deeply([parse_section('usage:',
+                         'usage: -x\n -y')], ['usage: -x\n -y']);
+    is_deeply([parse_section('usage:', $usage)], [
+            "usage: this",
+            "usage:hai",
+            "usage: this that",
+            "usage: foo\n       bar",
+            "PROGRAM USAGE:\n foo\n bar",
+            "usage:\n\ttoo\n\ttar",
+            "Usage: eggs spam",
+            "usage: pit stop",
+    ]);
 };
 
 done_testing;
