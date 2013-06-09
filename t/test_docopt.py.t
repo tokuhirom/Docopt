@@ -623,6 +623,22 @@ subtest 'test_docopt' => sub {
     #with raises(SystemExit):
     #    docopt(doc, 'help')  XXX Maybe help command?
 };
+
+subtest 'test_language_errors' => sub {
+    isa_ok(
+        exception {
+            docopt('no usage with colon here')
+        },
+        'Docopt::Exceptions::DocoptLanguageError',
+    );
+    isa_ok(
+        exception {
+            docopt("usage: here \n\n and again usage: here")
+        },
+        'Docopt::Exceptions::DocoptLanguageError',
+    );
+};
+
 done_testing;
 
 sub test_pattern_flat {
