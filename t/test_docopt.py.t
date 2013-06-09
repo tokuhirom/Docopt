@@ -709,6 +709,18 @@ subtest 'test_default_value_for_positional_arguments' => sub {
     );
 };
 
+subtest 'test_issue_59' => sub {
+    is_deeply(
+        docopt('usage: prog --long=<a>', '--long='),
+        {'--long' => ''}
+    );
+    is_deeply(
+        docopt("usage: prog -l <a>\noptions: -l <a>", ['-l', '']),
+        {'-l'=> ''}
+    );
+};
+
+
 done_testing;
 
 sub test_pattern_flat {
