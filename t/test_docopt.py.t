@@ -650,6 +650,30 @@ subtest 'test_issue_40' => sub {
     );
 };
 
+# test_issue34_unicode_strings is python specific.
+
+subtest 'test_count_multiple_flags' => sub {
+    is_deeply(docopt('usage: prog [-v]', '-v'), {'-v' => True});
+    is_deeply(docopt('usage: prog [-vv]', ''), {'-v'=> 0});
+    is_deeply(docopt('usage: prog [-vv]', '-v'), {'-v' => 1});
+    is_deeply(docopt('usage: prog [-vv]', '-vv'), {'-v' => 2});
+    isa_ok(
+        exception { docopt('usage: prog [-vv]', '-vvv') },
+        'Docopt::Exceptions::DocoptExit'
+    );
+    is_deeply(
+        docopt('usage: prog [-v | -vv | -vvv]', '-vvv'),{'-v' => 3}
+    );
+    is_deeply(
+        docopt('usage: prog -v...', '-vvvvvv'),
+        {'-v' => 6}
+    );
+    is_deeply(
+        docopt('usage: prog [--ver --ver]', '--ver --ver'),
+        {'--ver' => 2}
+    );
+};
+
 done_testing;
 
 sub test_pattern_flat {

@@ -215,7 +215,7 @@ sub match {
             return (True, \@left_, [@collected, $match]);
         }
         $same_name[0]->{value} += $increment;
-        return (True, \@left_, @collected);
+        return (True, \@left_, \@collected);
     }
     return (True, \@left_, [@collected, $match]);
 }
@@ -339,9 +339,11 @@ sub match {
         my $matched;
         ($matched, $l, $c) = $pattern->match($l, $c);
         unless ($matched) {
+            ref($c) eq 'ARRAY' or Carp::confess("c is not arrayref");
             return (false, $left, $collected);
         }
     }
+    ref($c) eq 'ARRAY' or Carp::confess("c is not arrayref: " . join(', ', @{$self->children}));
     return (true, $l, $c);
 
     
@@ -365,11 +367,13 @@ use boolean;
 sub match {
     my ($self, $left, $collected) = @_;
     $collected ||= [];
+    ref($collected) eq 'ARRAY' or Carp::confess("collected is not arrayref: " . join(', ', @{$self->children}));
 
     my $m;
     for my $pattern (@{$self->children}) {
         ($m, $left, $collected) = $pattern->match($left, $collected);
     }
+    ref($collected) eq 'ARRAY' or Carp::confess("collected is not arrayref: " . join(', ', @{$self->children}));
     return (true, $left, $collected);
 
 #   def match(self, left, collected=None):
