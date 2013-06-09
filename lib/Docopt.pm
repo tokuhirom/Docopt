@@ -6,8 +6,6 @@ package Docopt;
 
 use Docopt::Util qw(string_partition in serialize defined_or);
 
-our $DocoptExit = 1;
-
 package Docopt::Pattern;
 
 use Docopt::Util qw(defined_or);

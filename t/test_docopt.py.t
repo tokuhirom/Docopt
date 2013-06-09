@@ -644,7 +644,6 @@ done_testing;
 sub test_pattern_flat {
     my ($input, $expected, $types) = @_;
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    local $Docopt::DocoptExit=0;
     my $got = $input->flat($types);
     is_deeply(
         $got,
@@ -676,7 +675,6 @@ sub test_parse_argv {
 sub test_parse_pattern {
     my ($input, $expected) = @_;
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    local $Docopt::DocoptExit=0;
     my $o = [Option('-h'), Option('-v', '--verbose'), Option('-f', '--file', 1)];
     is(
         Docopt::parse_pattern($input, $o)->__repl__,
@@ -688,7 +686,6 @@ sub test_parse_pattern {
 sub test_options_match {
     my ($got, $expected) = @_;
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    local $Docopt::DocoptExit=0;
     local $Data::Dumper::Purity=0;
     local $Data::Dumper::Terse=1;
     local $Data::Dumper::Deepcopy=1;
@@ -702,7 +699,6 @@ sub test_options_match {
 sub test_argument_match {
     my ($got, $expected) = @_;
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    local $Docopt::DocoptExit=0;
     local $Data::Dumper::Purity=0;
     local $Data::Dumper::Terse=1;
     local $Data::Dumper::Deepcopy=1;
