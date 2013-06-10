@@ -1,6 +1,6 @@
 # NAME
 
-Docopt - It's new $module
+Docopt - Command-line interface description language
 
 # SYNOPSIS
 
@@ -16,6 +16,8 @@ Docopt - It's new $module
         log-aggregate [--date=<ymd>]
 
 # DESCRIPTION
+
+__Docopt.pm is still under development. I may change interface without notice.__
 
 Docopt is command-line interface description language.
 
@@ -57,39 +59,39 @@ You can read official document: [http://docopt.org/](http://docopt.org/)
 
 # FUNCTIONS
 
-- `my $opts = docopt($doc, $argv, $help, $version, $option_first)`
+- `my $opts = docopt(%args)`
 
     Analyze argv by Docopt!
 
     Return value is HashRef.
 
-    Arguments are followings:
+    You can pass following options in `%args`:
 
-    - $doc
+    - doc
 
         It's Docopt documentation.
 
         If you don't provide this argument, Docopt.pm uses pod SYNOPSIS section in $0.
 
-    - $argv
+    - argv
 
         Argument in arrayref.
 
         Default: `\@ARGV`
 
-    - $help
+    - help
 
         If it's true value, Docopt.pm enables ` --help ` option automatically.
 
         Default: true.
 
-    - $version
+    - version
 
         Version number of the script. If it's not undef, Docopt.pm enables ` --version ` option.
 
         Default: undef
 
-    - $option\_first
+    - option\_first
 
             if (options_first) {
                 argv ::= [ long | shorts ]* [ argument ]* [ '--' [ argument ]* ] ;

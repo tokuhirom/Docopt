@@ -1129,11 +1129,13 @@ sub stringify {
 1;
 __END__
 
+=for stopwords kn docopt parens docopt-py
+
 =encoding utf-8
 
 =head1 NAME
 
-Docopt - It's new $module
+Docopt - Command-line interface description language
 
 =head1 SYNOPSIS
 
