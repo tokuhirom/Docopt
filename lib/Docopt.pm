@@ -1150,6 +1150,8 @@ Docopt - It's new $module
 
 =head1 DESCRIPTION
 
+B<Docopt.pm is still under development. I may change interface without notice.>
+
 Docopt is command-line interface description language.
 
 docopt helps you:
