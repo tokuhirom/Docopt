@@ -60,5 +60,16 @@
       }
    },
    "release_status" : "unstable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/tokuhirom/Docopt/issues"
+      },
+      "homepage" : "https://github.com/tokuhirom/Docopt",
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/tokuhirom/Docopt.git",
+         "web" : "https://github.com/tokuhirom/Docopt"
+      }
+   },
    "version" : "0.01"
 }
