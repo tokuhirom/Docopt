@@ -99,14 +99,14 @@ subtest 'test_option_name' => sub {
 
 DEBUG:
 subtest 'test_commands' => sub {
-    is_deeply(docopt('Usage: prog add', 'add'), {'add'=> True});
-    is_deeply(docopt('Usage: prog [add]', ''), {'add'=> undef});
-    is_deeply(docopt('Usage: prog [add]', 'add'), {'add'=> True});
-    is_deeply(docopt('Usage: prog (add|rm)', 'add'), {'add' => True, 'rm'=> undef});
-    is_deeply(docopt('Usage: prog (add|rm)', 'rm'), {'add'=> undef, 'rm'=> True});
-    is_deeply(docopt('Usage: prog a b', 'a b'), {'a' => True, 'b' => True});
+    is_deeply(docopt(doc => 'Usage: prog add', argv => 'add'), {'add'=> True});
+    is_deeply(docopt(doc => 'Usage: prog [add]', argv => ''), {'add'=> undef});
+    is_deeply(docopt(doc => 'Usage: prog [add]', argv => 'add'), {'add'=> True});
+    is_deeply(docopt(doc => 'Usage: prog (add|rm)', argv => 'add'), {'add' => True, 'rm'=> undef});
+    is_deeply(docopt(doc => 'Usage: prog (add|rm)', argv => 'rm'), {'add'=> undef, 'rm'=> True});
+    is_deeply(docopt(doc => 'Usage: prog a b', argv => 'a b'), {'a' => True, 'b' => True});
 #   with raises(DocoptExit):
-    isa_ok(exception { docopt('Usage: prog a b', 'b a') }, 'Docopt::Exceptions::DocoptExit');
+    isa_ok(exception { docopt(doc => 'Usage: prog a b', argv => 'b a') }, 'Docopt::Exceptions::DocoptExit');
 };
 
 subtest 'test_formal_usage' => sub {
@@ -519,31 +519,29 @@ subtest 'test_long_options_error_handling' => sub {
 #        docopt('Usage: prog --non-existent', '--non-existent')
 #    with raises(DocoptLanguageError):
 #        docopt('Usage: prog --non-existent')
-
-    isa_ok(exception {docopt('Usage: prog', '--non-existent')}, 'Docopt::Exceptions::DocoptExit');
-    isa_ok(exception {docopt('Usage: prog [--version --verbose]\n',
-               'Options: --version\n --verbose', '--ver')}, 'Docopt::Exceptions::DocoptExit');
-    isa_ok(exception {docopt("Usage: prog --long\nOptions: --long ARG")}, 'Docopt::Exceptions::DocoptLanguageError');
-    isa_ok(exception { docopt("Usage: prog --long ARG\nOptions: --long ARG", '--long') }, 'Docopt::Exceptions::DocoptExit');
-    isa_ok(exception { docopt("Usage: prog --long=ARG\nOptions: --long") }, 'Docopt::Exceptions::DocoptLanguageError');
-    isa_ok(exception { docopt("Usage: prog --long\nOptions: --long", '--long=ARG') }, 'Docopt::Exceptions::DocoptExit');
+    isa_ok(exception {docopt(doc => 'Usage: prog', argv => '--non-existent')}, 'Docopt::Exceptions::DocoptExit');
+    isa_ok(exception {docopt(doc => "Usage: prog [--version --verbose]\nOptions: --version\n --verbose", argv => '--ver')}, 'Docopt::Exceptions::DocoptExit');
+    isa_ok(exception {docopt(doc => "Usage: prog --long\nOptions: --long ARG")}, 'Docopt::Exceptions::DocoptLanguageError');
+    isa_ok(exception { docopt(doc => "Usage: prog --long ARG\nOptions: --long ARG", argv => '--long') }, 'Docopt::Exceptions::DocoptExit');
+    isa_ok(exception { docopt(doc => "Usage: prog --long=ARG\nOptions: --long") }, 'Docopt::Exceptions::DocoptLanguageError');
+    isa_ok(exception { docopt(doc => "Usage: prog --long\nOptions: --long", argv => '--long=ARG') }, 'Docopt::Exceptions::DocoptExit');
 };
 
 subtest 'test_short_options_error_handling' => sub {
-    isa_ok(exception { docopt("Usage: prog -x\nOptions: -x  this\n -x  that") }, 'Docopt::Exceptions::DocoptLanguageError');
+    isa_ok(exception { docopt(doc => "Usage: prog -x\nOptions: -x  this\n -x  that") }, 'Docopt::Exceptions::DocoptLanguageError');
 
 #    with raises(DocoptLanguageError):
 #        docopt('Usage: prog -x')
-    isa_ok(exception { docopt('Usage: prog', '-x') }, 'Docopt::Exceptions::DocoptExit');
-    isa_ok(exception { docopt("Usage: prog -o\nOptions: -o ARG") }, 'Docopt::Exceptions::DocoptLanguageError');
-    isa_ok(exception { docopt('Usage: prog -o ARG\nOptions: -o ARG', '-o') }, 'Docopt::Exceptions::DocoptExit');
+    isa_ok(exception { docopt(doc => 'Usage: prog', argv => '-x') }, 'Docopt::Exceptions::DocoptExit');
+    isa_ok(exception { docopt(doc => "Usage: prog -o\nOptions: -o ARG") }, 'Docopt::Exceptions::DocoptLanguageError');
+    isa_ok(exception { docopt(doc => 'Usage: prog -o ARG\nOptions: -o ARG', argv => '-o') }, 'Docopt::Exceptions::DocoptExit');
 };
 
 subtest 'test_matching_paren' => sub {
-    isa_ok(exception { docopt('Usage: prog [a [b]') }, 'Docopt::Exceptions::DocoptLanguageError');
+    isa_ok(exception { docopt(doc => 'Usage: prog [a [b]') }, 'Docopt::Exceptions::DocoptLanguageError');
     isa_ok(
         exception {
-            docopt('Usage: prog [a [b] ] c )');
+            docopt(doc => 'Usage: prog [a [b] ] c )');
         },
         'Docopt::Exceptions::DocoptLanguageError'
     );
@@ -551,22 +549,22 @@ subtest 'test_matching_paren' => sub {
 
 subtest 'test_allow_double_dash' => sub {
     is_deeply(
-        docopt( "usage: prog [-o] [--] <arg>\nkptions: -o", '-- -o' ),
+        docopt( doc => "usage: prog [-o] [--] <arg>\nkptions: -o", argv => '-- -o' ),
         { '-o' => undef, '<arg>' => '-o', '--' => true }
     );
-    is_deeply(docopt("usage: prog [-o] [--] <arg>\nkptions: -o",
-                  '-o 1'), {'-o'=> True, '<arg>'=>'1', '--' => undef});
+    is_deeply(docopt(doc => "usage: prog [-o] [--] <arg>\nkptions: -o",
+                  argv => '-o 1'), {'-o'=> True, '<arg>'=>'1', '--' => undef});
 
     # "--" is not allowed; FIXME?
-    isa_ok(exception { docopt("usage: prog [-o] <arg>\noptions:-o", '-- -o') }, 'Docopt::Exceptions::DocoptExit');
+    isa_ok(exception { docopt(doc => "usage: prog [-o] <arg>\noptions:-o", argv => '-- -o') }, 'Docopt::Exceptions::DocoptExit');
 };
 
 subtest 'test_docopt' => sub {
     my $doc = q{Usage: prog [-v] A
 
              Options: -v  Be verbose.};
-    is_deeply(docopt($doc, 'arg'), {'-v' => undef, 'A' => 'arg'});
-    is_deeply(docopt($doc, '-v arg'), {'-v' => true, 'A' => 'arg'});
+    is_deeply(docopt(doc => $doc, argv => 'arg'), {'-v' => undef, 'A' => 'arg'});
+    is_deeply(docopt(doc => $doc, argv => '-v arg'), {'-v' => true, 'A' => 'arg'});
     $doc = q{Usage: prog [-vqr] [FILE]
               prog INPUT OUTPUT
               prog --help
@@ -579,28 +577,28 @@ subtest 'test_docopt' => sub {
 
       };
     is_deeply(
-        docopt($doc, '-v file.py'),
+        docopt(doc => $doc, argv => '-v file.py'),
         {'-v'=> True, '-q'=> undef, '-r'=> undef, '--help'=> undef,
                  'FILE'=> 'file.py', 'INPUT'=> None, 'OUTPUT'=> None}
     );
 
     is_deeply(
-        docopt($doc, '-v'),
+        docopt(doc => $doc, argv => '-v'),
         {'-v'=> True, '-q'=> undef, '-r'=> undef, '--help'=> undef,
                  'FILE'=> None, 'INPUT'=> None, 'OUTPUT'=> None}
     );
 
     # does not match
     isa_ok(exception { 
-        docopt($doc, '-v input.py output.py')
+        docopt(doc => $doc, argv => '-v input.py output.py')
     }, 'Docopt::Exceptions::DocoptExit');
 
     isa_ok(exception { 
-        docopt($doc, '--fake')
+        docopt(doc => $doc, argv => '--fake')
     }, 'Docopt::Exceptions::DocoptExit');
 
     isa_ok(exception { 
-        docopt($doc, '--hel')
+        docopt(doc => $doc, argv => '--hel')
     }, 'SystemExit');
 
     #with raises(SystemExit):
@@ -610,13 +608,13 @@ subtest 'test_docopt' => sub {
 subtest 'test_language_errors' => sub {
     isa_ok(
         exception {
-            docopt('no usage with colon here')
+            docopt(doc => 'no usage with colon here')
         },
         'Docopt::Exceptions::DocoptLanguageError',
     );
     isa_ok(
         exception {
-            docopt("usage: here \n\n and again usage: here")
+            docopt(doc => "usage: here \n\n and again usage: here")
         },
         'Docopt::Exceptions::DocoptLanguageError',
     );
@@ -624,11 +622,11 @@ subtest 'test_language_errors' => sub {
 
 subtest 'test_issue_40' => sub {
     isa_ok(
-        exception { docopt('usage: prog --help-commands | --help', '--help') },
+        exception { docopt(doc => 'usage: prog --help-commands | --help', argv => '--help') },
         'SystemExit',
     );
     is_deeply(
-        docopt('usage: prog --aabb | --aa', '--aa'),
+        docopt(doc => 'usage: prog --aabb | --aa', argv => '--aa'),
         { '--aabb' => undef, '--aa' => true }
     );
 };
@@ -636,30 +634,30 @@ subtest 'test_issue_40' => sub {
 # test_issue34_unicode_strings is python specific.
 
 subtest 'test_count_multiple_flags' => sub {
-    is_deeply(docopt('usage: prog [-v]', '-v'), {'-v' => True});
-    is_deeply(docopt('usage: prog [-vv]', ''), {'-v'=> 0});
-    is_deeply(docopt('usage: prog [-vv]', '-v'), {'-v' => 1});
-    is_deeply(docopt('usage: prog [-vv]', '-vv'), {'-v' => 2});
+    is_deeply(docopt(doc => 'usage: prog [-v]', argv => '-v'), {'-v' => True});
+    is_deeply(docopt(doc => 'usage: prog [-vv]', argv => ''), {'-v'=> 0});
+    is_deeply(docopt(doc => 'usage: prog [-vv]', argv => '-v'), {'-v' => 1});
+    is_deeply(docopt(doc => 'usage: prog [-vv]', argv => '-vv'), {'-v' => 2});
     isa_ok(
-        exception { docopt('usage: prog [-vv]', '-vvv') },
+        exception { docopt(doc => 'usage: prog [-vv]', argv => '-vvv') },
         'Docopt::Exceptions::DocoptExit'
     );
     is_deeply(
-        docopt('usage: prog [-v | -vv | -vvv]', '-vvv'),{'-v' => 3}
+        docopt(doc => 'usage: prog [-v | -vv | -vvv]', argv => '-vvv'),{'-v' => 3}
     );
     is_deeply(
-        docopt('usage: prog -v...', '-vvvvvv'),
+        docopt(doc => 'usage: prog -v...', argv => '-vvvvvv'),
         {'-v' => 6}
     );
     is_deeply(
-        docopt('usage: prog [--ver --ver]', '--ver --ver'),
+        docopt(doc => 'usage: prog [--ver --ver]', argv => '--ver --ver'),
         {'--ver' => 2}
     );
 };
 
 subtest 'test_any_options_parameter' => sub {
     isa_ok(
-        exception { docopt('usage: prog [options]', '-foo --bar --spam=eggs') },
+        exception { docopt(doc => 'usage: prog [options]', argv => '-foo --bar --spam=eggs') },
         'Docopt::Exceptions::DocoptExit',
     );
 #    assert docopt('usage: prog [options]', '-foo --bar --spam=eggs',
@@ -667,7 +665,7 @@ subtest 'test_any_options_parameter' => sub {
 #                                         '--bar': True, '--spam': 'eggs'}
     isa_ok(
         exception {
-            docopt('usage: prog [options]', '--foo --bar --bar')
+            docopt(doc => 'usage: prog [options]', argv => '--foo --bar --bar')
         },
         'Docopt::Exceptions::DocoptExit',
     );
@@ -675,7 +673,7 @@ subtest 'test_any_options_parameter' => sub {
 #                  any_options=True) == {'--foo': True, '--bar': 2}
     isa_ok(
         exception {
-            docopt('usage: prog [options]', '--bar --bar --bar -ffff')
+            docopt(doc => 'usage: prog [options]', argv => '--bar --bar --bar -ffff')
         },
         'Docopt::Exceptions::DocoptExit',
     );
@@ -683,7 +681,7 @@ subtest 'test_any_options_parameter' => sub {
 #                  any_options=True) == {'--bar': 3, '-f': 4}
     isa_ok(
         exception {
-            docopt('usage: prog [options]', '--long=arg --long=another')
+            docopt(doc => 'usage: prog [options]', argv => '--long=arg --long=another')
         },
         'Docopt::Exceptions::DocoptExit',
     );
@@ -694,17 +692,17 @@ subtest 'test_any_options_parameter' => sub {
 subtest 'test_default_value_for_positional_arguments' => sub {
     # disabled right now
     is_deeply(
-        docopt("usage: prog [<p>]\n\n<p>  [default: x]", ""),
+        docopt(doc => "usage: prog [<p>]\n\n<p>  [default: x]", argv => ""),
             {'<p>' => None}
     #       {'<p>': 'x'}
     );
     is_deeply(
-        docopt("usage: prog [<p>]...\n\n<p>  [default: x y]", ""),
+        docopt(doc => "usage: prog [<p>]...\n\n<p>  [default: x y]", argv => ""),
             {'<p>' => []}
     #       {'<p>': ['x', 'y']}
     );
     is_deeply_ex(
-        docopt("usage: prog [<p>]...\n\n<p>  [default: x y]", "this"),
+        docopt(doc => "usage: prog [<p>]...\n\n<p>  [default: x y]", argv => "this"),
         {'<p>' => ['this']}
     #       {'<p>': ['this']}
     );
@@ -712,31 +710,30 @@ subtest 'test_default_value_for_positional_arguments' => sub {
 
 subtest 'test_issue_59' => sub {
     is_deeply(
-        docopt('usage: prog --long=<a>', '--long='),
+        docopt(doc => 'usage: prog --long=<a>', argv => '--long='),
         {'--long' => ''}
     );
     is_deeply(
-        docopt("usage: prog -l <a>\noptions: -l <a>", ['-l', '']),
+        docopt(doc => "usage: prog -l <a>\noptions: -l <a>", argv => ['-l', '']),
         {'-l'=> ''}
     );
 };
 
 subtest 'test_options_first()' => sub {
-    is_deeply_ex(docopt('usage: prog [--opt] [<args>...]',
-                  '--opt this that'), {'--opt'=> True,
+    is_deeply_ex(docopt(doc => 'usage: prog [--opt] [<args>...]',
+                  argv => '--opt this that'), {'--opt'=> True,
                                          '<args>'=> ['this', 'that']});
-    is_deeply_ex(docopt('usage: prog [--opt] [<args>...]',
-                  'this that --opt'), {'--opt'=> True,
+    is_deeply_ex(docopt(doc => 'usage: prog [--opt] [<args>...]',
+                  argv => 'this that --opt'), {'--opt'=> True,
                                          '<args>'=> ['this', 'that']});
-    is_deeply_ex(docopt('usage: prog [--opt] [<args>...]',
-                  'this that --opt',
-                  True,undef,
-                  True), {'--opt'=> undef,
+    is_deeply_ex(docopt(doc => 'usage: prog [--opt] [<args>...]',
+                  argv => 'this that --opt',
+                  option_first => True), {'--opt'=> undef,
                                           '<args>'=> ['this', 'that', '--opt']});
 };
 
 subtest 'test_issue_68_options_shortcut_does_not_include_options_in_usage_pattern' => sub {
-    my $args = docopt("usage: prog [-ab] [options]\noptions: -x\n -y", '-ax');
+    my $args = docopt(doc => "usage: prog [-ab] [options]\noptions: -x\n -y", argv => '-ax');
     # Need to use `is` (not `==`) since we want to make sure
     # that they are not 1/0, but strictly True/False:
     is_deeply($args->{'-a'}, True);
@@ -747,21 +744,21 @@ subtest 'test_issue_68_options_shortcut_does_not_include_options_in_usage_patter
 
 subtest 'test_issue_65_evaluate_argv_when_called_not_when_imported' => sub {
     local @ARGV = qw(-a);
-    is_deeply(docopt('usage: prog [-ab]'), {'-a' => True, '-b' => undef});
+    is_deeply(docopt(doc => 'usage: prog [-ab]'), {'-a' => True, '-b' => undef});
     local @ARGV = qw(-b);
-    is_deeply(docopt('usage: prog [-ab]'), {'-a' => undef, '-b'=> True});
+    is_deeply(docopt(doc => 'usage: prog [-ab]'), {'-a' => undef, '-b'=> True});
 };
 
 
 subtest 'test_issue_71_double_dash_is_not_a_valid_option_argument' => sub {
     isa_ok(
-        exception { docopt('usage: prog [--log=LEVEL] [--] <args>...', '--log -- 1 2') },
+        exception { docopt(doc => 'usage: prog [--log=LEVEL] [--] <args>...', argv => '--log -- 1 2') },
         'Docopt::Exceptions::DocoptExit',
     );
     isa_ok(
         exception {
-            docopt("usage: prog [-l LEVEL] [--] <args>...
-                    options: -l LEVEL", "-l -- 1 2")
+            docopt(doc => "usage: prog [-l LEVEL] [--] <args>...
+                    options: -l LEVEL", argv => "-l -- 1 2")
         },
         'Docopt::Exceptions::DocoptExit',
     );

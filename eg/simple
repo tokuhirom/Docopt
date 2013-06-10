@@ -9,7 +9,7 @@ use JSON;
 
 our $VERSION = '0.01';
 
-my $ret = docopt(undef, undef, 1, $VERSION);
+my $ret = docopt(version => $VERSION);
 print JSON->new->canonical(1)->convert_blessed->encode($ret), "\n";
 
 __END__

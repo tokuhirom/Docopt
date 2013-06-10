@@ -638,8 +638,8 @@ sub parse_long {
     }
     my $o;
     if (@similar > 1) { # might be simply specified ambiguously 2+ times?
-        die sprintf '%s is not a unique prefix: %s?',
-            $long, join(', ', map { $_->long } @similar);
+        $tokens->error->throw(sprintf '%s is not a unique prefix: %s?',
+            $long, join(', ', map { $_->long } @similar));
     } elsif (@similar < 1) {
         my $argcount = $eq eq '=' ? 1 : 0;
         $o = Docopt::Option->new(undef, $long, $argcount);
@@ -1008,7 +1008,20 @@ sub extras {
 
 sub docopt {
     # def docopt(doc, argv=None, help=True, version=None, options_first=False):
-    my ($doc, $argv, $help, $version, $option_first) = @_;
+    @_%2==0 or Carp::confess("You need to pass arguments are hash");
+
+    my %args = @_;
+
+    my $doc = delete $args{doc};
+    my $argv = delete $args{argv} || \@ARGV;
+    my $help = exists($args{help}) ? delete $args{help} : true;
+    my $version = delete $args{version};
+    my $option_first = delete $args{option_first};
+
+    if (%args) {
+        Carp::confess("Unknown argument passed to docopt(): " . join(", ", keys %args));
+    }
+
     if (not defined $doc) {
         # Should I selecte 'SYNOPSIS' section?
         require Pod::Usage;
@@ -1023,8 +1036,6 @@ sub docopt {
 #       $parser->{output_fh} = $fh;
 #       $parser->parse_file($0);
     }
-    if (@_<=2) { $help = true }
-    $argv ||= \@ARGV;
 
     my @usage_sections = parse_section('usage:', $doc);
     if (@usage_sections == 0) {
@@ -1186,41 +1197,41 @@ You can read official document: L<http://docopt.org/>
 
 =over 4
 
-=item C<< my $opts = docopt($doc, $argv, $help, $version, $option_first) >>
+=item C<< my $opts = docopt(%args) >>
 
 Analyze argv by Docopt!
 
 Return value is HashRef.
 
-Arguments are followings:
+You can pass following options in C<%args>:
 
 =over 4
 
-=item $doc
+=item doc
 
 It's Docopt documentation.
 
 If you don't provide this argument, Docopt.pm uses pod SYNOPSIS section in $0.
 
-=item $argv
+=item argv
 
 Argument in arrayref.
 
 Default: C<\@ARGV>
 
-=item $help
+=item help
 
 If it's true value, Docopt.pm enables C< --help > option automatically.
 
 Default: true.
 
-=item $version
+=item version
 
 Version number of the script. If it's not undef, Docopt.pm enables C< --version > option.
 
 Default: undef
 
-=item $option_first
+=item option_first
 
     if (options_first) {
         argv ::= [ long | shorts ]* [ argument ]* [ '--' [ argument ]* ] ;
