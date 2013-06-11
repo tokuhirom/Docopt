@@ -55,6 +55,7 @@ sub repl($) {
     } else {
         local $Data::Dumper::Terse=1;
         local $Data::Dumper::Indent=0;
+        local $Data::Dumper::Useqq=1;
         Dumper($val)
     }
 }
@@ -74,7 +75,7 @@ sub string_strip($) {
 
 sub string_partition($$) {
     my ($str, $sep) = @_;
-    if ($str =~ /\A(.*?)$sep(.*)\z/) {
+    if ($str =~ /\A(.*?)$sep(.*)\z/s) {
         return ($1, $sep, $2);
     } else {
         return ($str, '', '');

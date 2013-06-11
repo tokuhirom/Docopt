@@ -178,8 +178,19 @@ use parent -norequire, qw(Docopt::Pattern);
 use Docopt::Util qw(repl class_name True False is_number);
 
 use Class::Accessor::Lite (
-    rw => [qw(name value)],
+    rw => [qw(name)],
 );
+
+sub value {
+    my $self = shift;
+    return $self->{value} if @_==0;
+    if (@_==1) {
+        # warn "SET: $_[0]";
+        $self->{value} = $_[0];
+    } else {
+        Carp::confess("Too much arguments");
+    }
+}
 
 sub new {
     my ($class, $name, $value) = @_;
@@ -224,6 +235,7 @@ sub match {
             $increment = ref($match->value) eq 'ARRAY' ? $match->value : [$match->value];
         }
         unless (@same_name) {
+            # warn "NO SAME: " . ' . ' . repl($self->value) . ' : ' . repl($increment);
             $match->value($increment);
             return (True, \@left_, [@collected, $match]);
         }
@@ -556,7 +568,7 @@ use parent -norequire, qw(Docopt::LeafPattern);
 use Docopt::Util qw(repl string_strip string_partition defined_or);
 
 use Class::Accessor::Lite 0.05 (
-    rw => [qw(short long argcount value)],
+    rw => [qw(short long argcount)],
 );
 
 sub new {
@@ -570,6 +582,18 @@ sub new {
         value => !defined($value) && $argcount ? undef : $value,
     }, $class;
 }
+
+sub value {
+    my $self = shift;
+    return $self->{value} if @_==0;
+    if (@_==1) {
+        # Carp::cluck("SET: $_[0], $self->{long}, $self->{value}") if $_[0] eq 1;
+        $self->{value} = $_[0];
+    } else {
+        Carp::confess("Too much arguments");
+    }
+}
+
 
 sub single_match {
     my ($self, $left) = @_;
@@ -739,7 +763,7 @@ sub parse_shorts {
             my $value = undef;
             if ($o->argcount != 0) {
                 if ($left eq '') {
-                    if (not defined($tokens->current) || $tokens->current eq '--') {
+                    if (!defined($tokens->current) || $tokens->current eq '--') {
                         $tokens->error->throw("$short requires argument");
                     }
                     $value = $tokens->move;
@@ -953,7 +977,7 @@ sub parse_defaults {
 
     for my $s (parse_section('options:', $doc)) {
         # FIXME corner case "bla: options: --foo"
-        $s =~ s/\Aoptions://i;
+        (undef, undef, $s) = string_partition($s, ':');
         my @split = split /\n *(-\S+?)/, "\n" . $s;
         shift @split;
         my @split2;
@@ -961,11 +985,9 @@ sub parse_defaults {
             push @split2, $split[$i].defined_or($split[$i+1], '');
         }
 #       options = [Option.parse(s) for s in split if s.startswith('-')]
-        my @options;
         for my $s (grep /^-/, @split2) {
-            push @options, Docopt::Option->parse($s);
+            push @defaults, Docopt::Option->parse($s);
         }
-        push @defaults, @options;
     }
     return @defaults;
 }
@@ -976,8 +998,8 @@ sub parse_section {
     my @s;
     while ($source =~ /^([^\n]*${name}[^\n]*\n?(?:[ \t].*?(?:\n|$))*)/img) {
         local $_ = $1;
-        s/^\s+//;
-        s/\s+$//;
+        s/\A\s+//;
+        s/\s+\z//;
         push @s, $_;
     }
     return @s;
@@ -985,7 +1007,8 @@ sub parse_section {
 
 sub formal_usage {
     my ($section) = @_;
-    $section =~ s/^usage://i;
+    # _, _, section = section.partition(':')  # drop "usage:"
+    (undef, undef, $section) = string_partition($section, ':');
     my @pu = grep { /\S/ } split /\s+/, $section;
     my $cmd = shift @pu;
     return '( ' . join(' ', map { $_ eq $cmd ? ') | (' : $_ } @pu) . ' )';
@@ -1067,6 +1090,8 @@ sub docopt {
     for my $options_shortcut (@{$pattern->flat(Docopt::OptionsShortcut::)}) {
         my @doc_options = parse_defaults($doc);
         $options_shortcut->children([grep { !in(serialize($_), [map { serialize($_) } @$parse_options]) } @doc_options]);
+        # pyprint($options_shortcut);
+
         #if any_options:
         #    options_shortcut.children += [Option(o.short, o.long, o.argcount)
         #                    for o in argv if type(o) is Option]

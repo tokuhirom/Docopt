@@ -53,9 +53,9 @@ options:
 
     my @defaults = Docopt::parse_defaults($doc);
     is(0+@defaults, 3);
-    is($defaults[0]->__repl__, "Option('-h', '--help', 0, undef)");
-    is($defaults[1]->__repl__, "Option('-o', undef, 1, undef)");
-    is($defaults[2]->__repl__, "Option(undef, '--verbose', 0, undef)");
+    is($defaults[0]->__repl__, 'Option("-h", "--help", 0, undef)');
+    is($defaults[1]->__repl__, 'Option("-o", undef, 1, undef)');
+    is($defaults[2]->__repl__, 'Option(undef, "--verbose", 0, undef)');
 };
 
 subtest 'formal_usage' => sub {
@@ -71,7 +71,7 @@ usage:
 subtest 'Tokens.from_pattern' => sub {
     subtest 'complex' => sub {
         is(Docopt::Tokens->from_pattern('(-h|-v[--file=<f>]N...)')->__repl__,
-            q!['(', '-h', '|', '-v', '[', '--file=<f>', ']', 'N', '...', ')']!
+            q!["(", "-h", "|", "-v", "[", "--file=<f>", "]", "N", "...", ")"]!
         );
     };
     subtest 'simple' => sub {
@@ -81,7 +81,7 @@ usage:
     foo a b
 ...
         is(Docopt::Tokens->from_pattern(Docopt::formal_usage($doc))->__repl__,
-            "['(', 'x', 'y', ')', '|', '(', 'a', 'b', ')']",
+            '["(", "x", "y", ")", "|", "(", "a", "b", ")"]',
         );
     };
 };
@@ -96,7 +96,7 @@ usage:
         note(Docopt::Tokens->from_pattern($formal)->__repl__);
         my $options = [];
         my $result = Docopt::parse_pattern($formal, $options);
-        is($result->__repl__, q!Required(Required(Command('bar', undef)))!);
+        is($result->__repl__, q!Required(Required(Command("bar", undef)))!);
     };
 };
 
