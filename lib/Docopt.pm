@@ -245,10 +245,6 @@ use parent -norequire, qw(Docopt::Pattern);
 use Carp;
 
 use Docopt::Util qw(repl class_name);
-
-use Class::Accessor::Lite 0.05 (
-    rw => [qw(children)],
-);
 use Scalar::Util qw(blessed);
 
 sub new {
@@ -262,6 +258,17 @@ sub new {
     bless {
         children => [@$children],
     }, $class;
+}
+
+sub children {
+    my $self = shift;
+    return $self->{children} if @_==0;
+    if (@_==1) {
+        ref($_[0]) eq 'ARRAY' or Carp::confess("Argument must be ArrayRef but: " . $_[0]);
+        $self->{children} = $_[0];
+    } else {
+        Carp::confess("Too much arguments");
+    }
 }
 
 sub __repl__ {
@@ -1059,7 +1066,7 @@ sub docopt {
     my $parse_options = $pattern->flat(Docopt::Option::);
     for my $options_shortcut (@{$pattern->flat(Docopt::OptionsShortcut::)}) {
         my @doc_options = parse_defaults($doc);
-        $options_shortcut->children(grep { !in(serialize($_), [map { serialize($_) } @$parse_options]) } @doc_options);
+        $options_shortcut->children([grep { !in(serialize($_), [map { serialize($_) } @$parse_options]) } @doc_options]);
         #if any_options:
         #    options_shortcut.children += [Option(o.short, o.long, o.argcount)
         #                    for o in argv if type(o) is Option]
