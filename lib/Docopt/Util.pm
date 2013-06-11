@@ -13,6 +13,7 @@ sub False() { false }
 use Data::Dumper; # serializer
 use Scalar::Util ();
 use Storable ();
+use B;
 
 sub pyprint {
     print Docopt::Util::repl($_[0]), $/;
@@ -24,11 +25,16 @@ sub serialize($) {
 }
 
 sub is_number {
-    my $stuff = shift;
-    return 0 if ref $stuff;
-    return 0 unless defined $stuff;
-    return 1 if $stuff =~ /\A[0-9]+\z/;
+    my $value = shift;
+    my $b_obj = B::svref_2object(\$value);
+    my $flags = $b_obj->FLAGS;
+    return 1 # as is
+                if $flags & ( B::SVp_IOK | B::SVp_NOK ) and !( $flags & B::SVp_POK ); # SvTYPE is IV or NV?
     return 0;
+#   return 0 if ref $stuff;
+#   return 0 unless defined $stuff;
+#   return 1 if $stuff =~ /\A[0-9]+\z/;
+#   return 0;
 }
 
 sub in {
