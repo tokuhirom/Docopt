@@ -3,7 +3,7 @@ use warnings;
 use utf8;
 use Test::More;
 use Docopt;
-use Test::Requires 'JSON::PP';
+use JSON::PP;
 use Data::Dumper;
 use boolean;
 

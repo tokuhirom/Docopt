@@ -54,6 +54,7 @@
       },
       "test" : {
          "requires" : {
+            "JSON::PP" : "0",
             "Test::Fatal" : "0",
             "Test::More" : "0.98"
          }
