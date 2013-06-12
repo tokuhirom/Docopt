@@ -559,7 +559,7 @@ sub __repl__ {
 
 package Docopt;
 
-our $VERSION = "0.02";
+our $VERSION = "0.03";
 
 package Docopt::Option;
 

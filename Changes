@@ -2,6 +2,11 @@ Revision history for Perl extension Docopt
 
 {{$NEXT}}
 
+0.03 2013-06-12T02:16:04Z
+
+    - fixed testing deps
+      (tokuhirom)
+
 0.02 2013-06-11T12:05:58Z
 
     - included testcases.docopt.

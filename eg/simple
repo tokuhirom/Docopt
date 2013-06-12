@@ -7,7 +7,7 @@ use Docopt;
 use Data::Dumper;
 use JSON;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 my $ret = docopt(version => $VERSION);
 print JSON->new->canonical(1)->convert_blessed->encode($ret), "\n";
