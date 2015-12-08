@@ -255,9 +255,7 @@ package Docopt::BranchPattern;
 use parent -norequire, qw(Docopt::Pattern);
 
 use Carp;
-
 use Docopt::Util qw(repl class_name);
-use Scalar::Util qw(blessed);
 
 sub new {
     my ($class, $children) = @_;
