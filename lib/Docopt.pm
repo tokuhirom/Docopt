@@ -323,7 +323,7 @@ sub parse {
     my ($class, $source) = @_;
     $source =~ /(<\S*?>)/;
     my $name = $1;
-    $source =~ /\[default: (.*)\]/i;
+    $source =~ /\[default: (.*?)\]/i;
     my $value = $1;
     return $class->new($name, $value);
 }
@@ -635,7 +635,7 @@ sub parse {
         }
     }
     if ($argcount) {
-        if (defined($description) && $description =~ /\[default: (.*)\]/i) {
+        if (defined($description) && $description =~ /\[default: (.*?)\]/i) {
             $value = $1;
         }
     }
