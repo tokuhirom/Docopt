@@ -978,7 +978,7 @@ sub parse_defaults {
     for my $s (parse_section('options:', $doc)) {
         # FIXME corner case "bla: options: --foo"
         (undef, undef, $s) = string_partition($s, ':');
-        my @split = split /\n *(-\S+?)/, "\n" . $s;
+        my @split = split /\n[ \t]*(-\S+?)/, "\n" . $s;
         shift @split;
         my @split2;
         for (my $i=0; $i<@split; $i+=2) {
