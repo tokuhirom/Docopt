@@ -1247,6 +1247,17 @@ It's Docopt documentation.
 
 If you don't provide this argument, Docopt.pm uses pod SYNOPSIS section in $0.
 
+If you use pod documentation SYNOPSIS section be sure to
+
+B<***** indent at least 4 spaces *****>
+
+to prevent combining multiple lines into a paragraph, and watch out for column
+wrap.  You can use perldoc ./program to check the results that are sent into
+Docopt.pm.
+
+If you don't like the format then you should pass it through the "doc"
+argument instead.
+
 =item argv
 
 Argument in arrayref.
