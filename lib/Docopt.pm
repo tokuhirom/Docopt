@@ -188,7 +188,7 @@ sub value {
         # warn "SET: $_[0]";
         $self->{value} = $_[0];
     } else {
-        Carp::confess("Too much arguments");
+        Carp::confess("Too many arguments");
     }
 }
 
@@ -259,7 +259,7 @@ use Docopt::Util qw(repl class_name);
 
 sub new {
     my ($class, $children) = @_;
-    Carp::croak("Too much arguments") unless @_==2;
+    Carp::croak("Too many arguments") unless @_==2;
     Carp::confess "Children must be arrayref: $class, $children" unless ref $children eq 'ARRAY';
 
     # zjzj FIXME ad-hoc hack
@@ -277,7 +277,7 @@ sub children {
         ref($_[0]) eq 'ARRAY' or Carp::confess("Argument must be ArrayRef but: " . $_[0]);
         $self->{children} = $_[0];
     } else {
-        Carp::confess("Too much arguments");
+        Carp::confess("Too many arguments");
     }
 }
 
@@ -588,7 +588,7 @@ sub value {
         # Carp::cluck("SET: $_[0], $self->{long}, $self->{value}") if $_[0] eq 1;
         $self->{value} = $_[0];
     } else {
-        Carp::confess("Too much arguments");
+        Carp::confess("Too many arguments");
     }
 }
 
@@ -1182,7 +1182,7 @@ Docopt - Command-line interface description language
 
 =head1 DESCRIPTION
 
-B<Docopt.pm is still under development. I may change interface without notice.>
+B<Docopt.pm is still under development. The interface may change without notice.>
 
 Docopt is command-line interface description language.
 
