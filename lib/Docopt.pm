@@ -381,7 +381,7 @@ sub match {
     ref($c) eq 'ARRAY' or Carp::confess("c is not arrayref: " . join(', ', @{$self->children}));
     return (true, $l, $c);
 
-    
+
 #   def match(self, left, collected=None):
 #       collected = [] if collected is None else collected
 #       l = left
@@ -692,7 +692,7 @@ sub parse_long {
                 if (
                     (not defined $tokens->current() ) || $tokens->current eq '--') {
                     $tokens->error->throw(sprintf "%s requires argument", $o->long);
-                } 
+                }
                 $value = $tokens->move;
             }
         }

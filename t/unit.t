@@ -22,7 +22,7 @@ subtest 'transform' => sub {
     is_deeply(
         $got,
         Either(Required(Argument('<p>', None), Argument('<p>', None))),
-    ) or die repl($got); 
+    ) or die repl($got);
 };
 
 subtest 'fix_repeating_arguments' => sub {
@@ -31,7 +31,7 @@ subtest 'fix_repeating_arguments' => sub {
     is_deeply(
         $got,
         Required(OneOrMore(Optional(Argument('<p>', []))))
-    ) or die repl($got); 
+    ) or die repl($got);
 };
 
 subtest 'parse_section' => sub {
