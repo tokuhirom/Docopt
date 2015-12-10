@@ -188,7 +188,7 @@ sub value {
         # warn "SET: $_[0]";
         $self->{value} = $_[0];
     } else {
-        Carp::confess("Too much arguments");
+        Carp::confess("Too many arguments");
     }
 }
 
@@ -255,13 +255,11 @@ package Docopt::BranchPattern;
 use parent -norequire, qw(Docopt::Pattern);
 
 use Carp;
-
 use Docopt::Util qw(repl class_name);
-use Scalar::Util qw(blessed);
 
 sub new {
     my ($class, $children) = @_;
-    Carp::croak("Too much arguments") unless @_==2;
+    Carp::croak("Too many arguments") unless @_==2;
     Carp::confess "Children must be arrayref: $class, $children" unless ref $children eq 'ARRAY';
 
     # zjzj FIXME ad-hoc hack
@@ -279,7 +277,7 @@ sub children {
         ref($_[0]) eq 'ARRAY' or Carp::confess("Argument must be ArrayRef but: " . $_[0]);
         $self->{children} = $_[0];
     } else {
-        Carp::confess("Too much arguments");
+        Carp::confess("Too many arguments");
     }
 }
 
@@ -323,7 +321,7 @@ sub parse {
     my ($class, $source) = @_;
     $source =~ /(<\S*?>)/;
     my $name = $1;
-    $source =~ /\[default: (.*)\]/i;
+    $source =~ /\[default: (.*?)\]/i;
     my $value = $1;
     return $class->new($name, $value);
 }
@@ -383,7 +381,7 @@ sub match {
     ref($c) eq 'ARRAY' or Carp::confess("c is not arrayref: " . join(', ', @{$self->children}));
     return (true, $l, $c);
 
-    
+
 #   def match(self, left, collected=None):
 #       collected = [] if collected is None else collected
 #       l = left
@@ -590,7 +588,7 @@ sub value {
         # Carp::cluck("SET: $_[0], $self->{long}, $self->{value}") if $_[0] eq 1;
         $self->{value} = $_[0];
     } else {
-        Carp::confess("Too much arguments");
+        Carp::confess("Too many arguments");
     }
 }
 
@@ -635,7 +633,7 @@ sub parse {
         }
     }
     if ($argcount) {
-        if (defined($description) && $description =~ /\[default: (.*)\]/i) {
+        if (defined($description) && $description =~ /\[default: (.*?)\]/i) {
             $value = $1;
         }
     }
@@ -694,7 +692,7 @@ sub parse_long {
                 if (
                     (not defined $tokens->current() ) || $tokens->current eq '--') {
                     $tokens->error->throw(sprintf "%s requires argument", $o->long);
-                } 
+                }
                 $value = $tokens->move;
             }
         }
@@ -978,7 +976,7 @@ sub parse_defaults {
     for my $s (parse_section('options:', $doc)) {
         # FIXME corner case "bla: options: --foo"
         (undef, undef, $s) = string_partition($s, ':');
-        my @split = split /\n *(-\S+?)/, "\n" . $s;
+        my @split = split /\n[ \t]*(-\S+?)/, "\n" . $s;
         shift @split;
         my @split2;
         for (my $i=0; $i<@split; $i+=2) {
@@ -1184,7 +1182,7 @@ Docopt - Command-line interface description language
 
 =head1 DESCRIPTION
 
-B<Docopt.pm is still under development. I may change interface without notice.>
+B<Docopt.pm is still under development. The interface may change without notice.>
 
 Docopt is command-line interface description language.
 
@@ -1248,6 +1246,17 @@ You can pass following options in C<%args>:
 It's Docopt documentation.
 
 If you don't provide this argument, Docopt.pm uses pod SYNOPSIS section in $0.
+
+If you use pod documentation SYNOPSIS section be sure to
+
+B<***** indent at least 4 spaces *****>
+
+to prevent combining multiple lines into a paragraph, and watch out for column
+wrap.  You can use perldoc ./program to check the results that are sent into
+Docopt.pm.
+
+If you don't like the format then you should pass it through the "doc"
+argument instead.
 
 =item argv
 
